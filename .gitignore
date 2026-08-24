@@ -1,0 +1,11 @@
+# python
+__pycache__/
+*.pyc
+.venv/
+backend/.env
+
+# node (frontend has its own, this covers root-level accidents)
+node_modules/
+
+# env
+.env
