@@ -1,9 +1,21 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import health
+from app.db.base import Base
+from app.db.session import engine
+import app.models  # noqa: F401 (すべてのモデルをBaseに登録させるために読み込む)
 
-app = FastAPI(title="Parking Availability API")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # アプリ起動時にDBテーブルを自動作成
+    Base.metadata.create_all(bind=engine)
+    yield
+
+
+app = FastAPI(title="Parking Availability API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
