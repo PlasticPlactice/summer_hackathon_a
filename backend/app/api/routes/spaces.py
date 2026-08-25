@@ -1,0 +1,80 @@
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+
+from app.db.session import get_db
+from app.models.senser import Sensers
+from app.models.spaces import Parking_spaces
+from app.schemas.spaces import (
+    ParkingSpaceCreate,
+    ParkingSpaceResponse,
+    ParkingSpaceSensorUpdate,
+    ParkingSpaceStatusUpdate,
+)
+
+router = APIRouter(prefix="/spaces", tags=["spaces"])
+
+
+@router.post("", response_model=ParkingSpaceResponse, status_code=status.HTTP_201_CREATED)
+def create_parking_space(
+    space_in: ParkingSpaceCreate,
+    db: Session = Depends(get_db),
+):
+    """駐車スペースを新規登録します"""
+    space = Parking_spaces(**space_in.model_dump())
+    db.add(space)
+    db.commit()
+    db.refresh(space)
+    return space
+
+
+@router.put("/{space_id}/sensor", response_model=ParkingSpaceResponse)
+def update_space_sensor(
+    space_id: int,
+    sensor_update: ParkingSpaceSensorUpdate,
+    db: Session = Depends(get_db),
+):
+    """駐車場（駐車スペース）とセンサの紐づけを変更します"""
+    space = db.query(Parking_spaces).filter(Parking_spaces.id == space_id).first()
+    if not space:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Parking space with id {space_id} not found",
+        )
+
+    if sensor_update.sensor_id is not None:
+        sensor = db.query(Sensers).filter(Sensers.id == sensor_update.sensor_id).first()
+        if not sensor:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Sensor with id {sensor_update.sensor_id} not found",
+            )
+        space.sensor_id = sensor.id
+        # 紐づけ変更時、センサーの現在の状態をスペースに反映
+        space.status = sensor.status
+    else:
+        # 紐づけ解除
+        space.sensor_id = None
+
+    db.commit()
+    db.refresh(space)
+    return space
+
+
+@router.patch("/{space_id}/status", response_model=ParkingSpaceResponse)
+def update_space_status(
+    space_id: int,
+    status_update: ParkingSpaceStatusUpdate,
+    db: Session = Depends(get_db),
+):
+    """駐車スペースのステータス（満車/空車等）を変更します"""
+    space = db.query(Parking_spaces).filter(Parking_spaces.id == space_id).first()
+    if not space:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Parking space with id {space_id} not found",
+        )
+
+    space.status = status_update.status
+    db.commit()
+    db.refresh(space)
+    return space
