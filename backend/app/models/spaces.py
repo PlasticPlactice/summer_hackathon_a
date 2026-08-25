@@ -1,0 +1,12 @@
+from sqlalchemy import Column, Integer, String, ForeignKey, SmallInteger
+from app.db.base import Base
+
+
+class Parking_spaces(Base):
+    __tablename__ = "parking_spaces"
+
+    id = Column(Integer, primary_key=True, index=True)
+    type = Column(String, nullable=False)
+    status = Column(SmallInteger, nullable=False)
+    parking_id = Column(Integer, ForeignKey("parkings.id"))
+    sensor_id = Column(Integer, ForeignKey("sensers.id"))
