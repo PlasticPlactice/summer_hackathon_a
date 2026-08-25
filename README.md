@@ -2,6 +2,12 @@
 
 センサーを用いた駐車状況を確認できるアプリ。
 
-- バックエンド: FastAPI
-- フロントエンド: Next.js
-- DB: PostgreSQL (Docker Compose管理)
+### db接続コマンド
+```
+mske db
+```
+
+### コンテナ起動
+```
+docker-compose up
+```
