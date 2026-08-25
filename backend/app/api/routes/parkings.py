@@ -22,10 +22,13 @@ def build_parking_status_response(parking: Parking, db: Session) -> ParkingStatu
         id=parking.id,
         name=parking.name,
         capacity=parking.capacity,
+        compact_capacity=parking.compact_capacity,
+        large_capacity=parking.large_capacity,
         available_spaces=available_count,
         occupied_spaces=occupied_count,
         spaces=space_responses,
     )
+
 
 
 @router.post("", response_model=ParkingStatusResponse, status_code=status.HTTP_201_CREATED)
