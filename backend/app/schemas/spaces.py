@@ -23,3 +23,12 @@ class ParkingSpaceResponse(ParkingSpaceBase):
     id: int
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ParkingSpaceSensorUpdate(BaseModel):
+    sensor_id: int | None = None
+
+
+class ParkingSpaceStatusUpdate(BaseModel):
+    status: int
+
