@@ -21,3 +21,10 @@ class SensorResponse(SensorBase):
     last_sens_at: datetime | None = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class SensorEventRequest(BaseModel):
+    device_id: str
+    status: int
+    sens_at: datetime | None = None
+
