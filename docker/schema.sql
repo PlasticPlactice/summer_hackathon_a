@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS parkings (
     large_capacity INTEGER NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS sensers (
+CREATE TABLE IF NOT EXISTS sensors (
     id SERIAL PRIMARY KEY,
     device_id VARCHAR NOT NULL UNIQUE,
     status SMALLINT NOT NULL,
@@ -20,10 +20,10 @@ CREATE TABLE IF NOT EXISTS parking_spaces (
     type VARCHAR NOT NULL,
     status SMALLINT NOT NULL,
     parking_id INTEGER REFERENCES parkings(id) ON DELETE CASCADE,
-    sensor_id INTEGER REFERENCES sensers(id) ON DELETE SET NULL
+    sensor_id INTEGER REFERENCES sensors(id) ON DELETE SET NULL
 );
 
 -- インデックス作成
 CREATE INDEX IF NOT EXISTS ix_parkings_id ON parkings(id);
-CREATE INDEX IF NOT EXISTS ix_sensers_id ON sensers(id);
+CREATE INDEX IF NOT EXISTS ix_sensors_id ON sensors(id);
 CREATE INDEX IF NOT EXISTS ix_parking_spaces_id ON parking_spaces(id);
