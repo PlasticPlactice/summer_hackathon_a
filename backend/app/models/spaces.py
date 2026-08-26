@@ -9,4 +9,4 @@ class Parking_spaces(Base):
     type = Column(String, nullable=False)
     status = Column(SmallInteger, nullable=False)
     parking_id = Column(Integer, ForeignKey("parkings.id"))
-    sensor_id = Column(Integer, ForeignKey("sensers.id"))
+    sensor_id = Column(Integer, ForeignKey("sensors.id"))

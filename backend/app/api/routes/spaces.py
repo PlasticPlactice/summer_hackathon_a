@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
-from app.models.senser import Sensers
+from app.models.sensor import Sensor
 from app.models.spaces import Parking_spaces
 from app.schemas.spaces import (
     ParkingSpaceCreate,
@@ -42,7 +42,7 @@ def update_space_sensor(
         )
 
     if sensor_update.sensor_id is not None:
-        sensor = db.query(Sensers).filter(Sensers.id == sensor_update.sensor_id).first()
+        sensor = db.query(Sensor).filter(Sensor.id == sensor_update.sensor_id).first()
         if not sensor:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

@@ -3,7 +3,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from app.models import Parking, Sensers, Parking_spaces
+from app.models import Parking, Sensor, Parking_spaces
 
 
 def test_create_parking(client: TestClient, test_db: Session):
@@ -110,11 +110,11 @@ def test_get_parking_status(client: TestClient, test_db: Session):
     
     # センサーを作成
     sensors = [
-        Sensers(device_id="SENSOR_001", status=0),
-        Sensers(device_id="SENSOR_002", status=1),
-        Sensers(device_id="SENSOR_003", status=0),
-        Sensers(device_id="SENSOR_004", status=1),
-        Sensers(device_id="SENSOR_005", status=0),
+        Sensor(device_id="SENSOR_001", status=0),
+        Sensor(device_id="SENSOR_002", status=1),
+        Sensor(device_id="SENSOR_003", status=0),
+        Sensor(device_id="SENSOR_004", status=1),
+        Sensor(device_id="SENSOR_005", status=0),
     ]
     test_db.add_all(sensors)
     test_db.flush()
