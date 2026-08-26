@@ -3,8 +3,8 @@ from sqlalchemy.sql import func
 from app.db.base import Base
 
 
-class Sensers(Base):
-    __tablename__ = "sensers"
+class Sensor(Base):
+    __tablename__ = "sensors"
 
     id = Column(Integer, primary_key=True, index=True)
     device_id = Column(String, nullable=False, unique=True)

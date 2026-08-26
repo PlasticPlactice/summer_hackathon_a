@@ -3,14 +3,14 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from app.models import Parking, Sensers, Parking_spaces
+from app.models import Parking, Sensor, Parking_spaces
 
 
 def test_create_parking_space(client: TestClient, test_db: Session):
     """駐車スペースを作成できることを確認"""
     # 駐車場とセンサーを事前に作成
     parking = Parking(name="テスト駐車場", capacity=50, compact_capacity=15, large_capacity=10)
-    sensor = Sensers(device_id="TEST_SENSOR", status=0)
+    sensor = Sensor(device_id="TEST_SENSOR", status=0)
     test_db.add_all([parking, sensor])
     test_db.flush()
     
@@ -34,8 +34,8 @@ def test_get_all_spaces(client: TestClient, test_db: Session):
     """全駐車スペースを取得できることを確認"""
     # テストデータを作成
     parking = Parking(name="テスト駐車場", capacity=50, compact_capacity=15, large_capacity=10)
-    sensor1 = Sensers(device_id="SENSOR_001", status=0)
-    sensor2 = Sensers(device_id="SENSOR_002", status=1)
+    sensor1 = Sensor(device_id="SENSOR_001", status=0)
+    sensor2 = Sensor(device_id="SENSOR_002", status=1)
     test_db.add_all([parking, sensor1, sensor2])
     test_db.flush()
     
@@ -56,7 +56,7 @@ def test_get_all_spaces(client: TestClient, test_db: Session):
 def test_get_space_by_id(client: TestClient, test_db: Session):
     """ID指定で駐車スペースを取得できることを確認"""
     parking = Parking(name="テスト駐車場", capacity=50, compact_capacity=15, large_capacity=10)
-    sensor = Sensers(device_id="TEST_SENSOR", status=0)
+    sensor = Sensor(device_id="TEST_SENSOR", status=0)
     test_db.add_all([parking, sensor])
     test_db.flush()
     
@@ -84,7 +84,7 @@ def test_get_space_not_found(client: TestClient):
 def test_update_space_status(client: TestClient, test_db: Session):
     """駐車スペースの状態を更新できることを確認"""
     parking = Parking(name="テスト駐車場", capacity=50, compact_capacity=15, large_capacity=10)
-    sensor = Sensers(device_id="TEST_SENSOR", status=0)
+    sensor = Sensor(device_id="TEST_SENSOR", status=0)
     test_db.add_all([parking, sensor])
     test_db.flush()
     
@@ -106,7 +106,7 @@ def test_update_space_status(client: TestClient, test_db: Session):
 def test_delete_space(client: TestClient, test_db: Session):
     """駐車スペースを削除できることを確認"""
     parking = Parking(name="テスト駐車場", capacity=50, compact_capacity=15, large_capacity=10)
-    sensor = Sensers(device_id="TEST_SENSOR", status=0)
+    sensor = Sensor(device_id="TEST_SENSOR", status=0)
     test_db.add_all([parking, sensor])
     test_db.flush()
     

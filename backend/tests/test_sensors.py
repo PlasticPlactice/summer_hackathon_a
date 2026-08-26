@@ -3,7 +3,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from app.models import Sensers
+from app.models import Sensor
 
 
 def test_create_sensor(client: TestClient, test_db: Session):
@@ -24,8 +24,8 @@ def test_create_sensor(client: TestClient, test_db: Session):
 def test_get_all_sensors(client: TestClient, test_db: Session):
     """全センサーを取得できることを確認"""
     # テストデータを作成
-    sensor1 = Sensers(device_id="SENSOR_001", status=0)
-    sensor2 = Sensers(device_id="SENSOR_002", status=1)
+    sensor1 = Sensor(device_id="SENSOR_001", status=0)
+    sensor2 = Sensor(device_id="SENSOR_002", status=1)
     test_db.add_all([sensor1, sensor2])
     test_db.commit()
     
@@ -40,7 +40,7 @@ def test_get_all_sensors(client: TestClient, test_db: Session):
 
 def test_get_sensor_by_id(client: TestClient, test_db: Session):
     """ID指定でセンサーを取得できることを確認"""
-    sensor = Sensers(device_id="TEST_SENSOR", status=0)
+    sensor = Sensor(device_id="TEST_SENSOR", status=0)
     test_db.add(sensor)
     test_db.commit()
     test_db.refresh(sensor)
@@ -63,7 +63,7 @@ def test_get_sensor_not_found(client: TestClient):
 
 def test_update_sensor(client: TestClient, test_db: Session):
     """センサーを更新できることを確認"""
-    sensor = Sensers(device_id="TEST_SENSOR", status=0)
+    sensor = Sensor(device_id="TEST_SENSOR", status=0)
     test_db.add(sensor)
     test_db.commit()
     test_db.refresh(sensor)
@@ -82,7 +82,7 @@ def test_update_sensor(client: TestClient, test_db: Session):
 
 def test_delete_sensor(client: TestClient, test_db: Session):
     """センサーを削除できることを確認"""
-    sensor = Sensers(device_id="TEST_SENSOR", status=0)
+    sensor = Sensor(device_id="TEST_SENSOR", status=0)
     test_db.add(sensor)
     test_db.commit()
     test_db.refresh(sensor)
@@ -92,4 +92,4 @@ def test_delete_sensor(client: TestClient, test_db: Session):
     assert response.status_code == 204
     
     # 削除されたことを確認
-    assert test_db.query(Sensers).filter(Sensers.id == sensor.id).first() is None
+    assert test_db.query(Sensor).filter(Sensor.id == sensor.id).first() is None
