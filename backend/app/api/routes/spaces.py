@@ -60,6 +60,40 @@ def update_space_sensor(
     return space
 
 
+@router.get("", response_model=list[ParkingSpaceResponse])
+def get_all_spaces(db: Session = Depends(get_db)):
+    """駐車スペース一覧を取得します"""
+    spaces = db.query(Parking_spaces).all()
+    return spaces
+
+
+@router.get("/{space_id}", response_model=ParkingSpaceResponse)
+def get_space_by_id(space_id: int, db: Session = Depends(get_db)):
+    """ID指定で駐車スペースを取得します"""
+    space = db.query(Parking_spaces).filter(Parking_spaces.id == space_id).first()
+    if not space:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Parking space with id {space_id} not found",
+        )
+    return space
+
+
+@router.delete("/{space_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_space(space_id: int, db: Session = Depends(get_db)):
+    """駐車スペースを削除します"""
+    space = db.query(Parking_spaces).filter(Parking_spaces.id == space_id).first()
+    if not space:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Parking space with id {space_id} not found",
+        )
+    db.delete(space)
+    db.commit()
+    return None
+
+
+@router.patch("/{space_id}", response_model=ParkingSpaceResponse)
 @router.patch("/{space_id}/status", response_model=ParkingSpaceResponse)
 def update_space_status(
     space_id: int,
@@ -78,3 +112,5 @@ def update_space_status(
     db.commit()
     db.refresh(space)
     return space
+
+
