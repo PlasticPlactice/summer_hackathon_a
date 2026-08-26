@@ -4,7 +4,7 @@ INSERT INTO parkings (id, name, capacity, compact_capacity, large_capacity) VALU
   (2, '前沢PA（下り）', 105, 79, 26);
 
 
--- センサーマスタテーブル初期データ (上り用: 101個, ID: 1~101)
+-- センサーマスタテーブル初期データ (上り用: 101個（小型:79, 大型:22）, ID: 1~101)
 INSERT INTO sensers (id, device_id, status, last_sens_at)
 SELECT 
   i,
@@ -22,19 +22,19 @@ SELECT
   NOW()
 FROM generate_series(102, 206) AS i;
 
--- 駐車スペース初期データ (上り PA: 101区画)
+-- 駐車スペース初期データ (上り PA: 101区画（小型:79, 大型:22）)
 INSERT INTO parking_spaces (type, status, parking_id, sensor_id)
 SELECT
-  CASE WHEN i % 5 = 0 THEN 'large' WHEN i % 2 = 0 THEN 'compact' ELSE 'standard' END,
+  CASE WHEN i <= 22 THEN 'large' ELSE 'compact' END,
   (i % 2),
   1,
   i
 FROM generate_series(1, 101) AS i;
 
--- 駐車スペース初期データ (下り PA: 105区画)
+-- 駐車スペース初期データ (下り PA: 105区画（小型:79, 大型:26）)
 INSERT INTO parking_spaces (type, status, parking_id, sensor_id)
 SELECT
-  CASE WHEN (i - 101) % 5 = 0 THEN 'large' WHEN (i - 101) % 2 = 0 THEN 'compact' ELSE 'standard' END,
+  CASE WHEN (i - 101) <= 26 THEN 'large' ELSE 'compact' END,
   ((i + 1) % 2),
   2,
   i
