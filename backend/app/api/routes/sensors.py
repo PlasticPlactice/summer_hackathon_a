@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.models.senser import Sensers
 from app.models.spaces import Parking_spaces
-from app.schemas.sensor import SensorEventRequest, SensorResponse
+from app.schemas.sensor import SensorCreate, SensorEventRequest, SensorResponse
 
 router = APIRouter(prefix="/sensors", tags=["sensors"])
 
@@ -15,6 +15,65 @@ def get_sensors(db: Session = Depends(get_db)):
     """センサーの一覧を取得します"""
     sensors = db.query(Sensers).all()
     return sensors
+
+
+@router.post("", response_model=SensorResponse, status_code=status.HTTP_201_CREATED)
+def create_sensor(
+    sensor_in: SensorCreate,
+    db: Session = Depends(get_db),
+):
+    """センサーを新規作成します"""
+    sensor = Sensers(**sensor_in.model_dump())
+    db.add(sensor)
+    db.commit()
+    db.refresh(sensor)
+    return sensor
+
+
+@router.get("/{sensor_id}", response_model=SensorResponse)
+def get_sensor(sensor_id: int, db: Session = Depends(get_db)):
+    """ID指定でセンサーを取得します"""
+    sensor = db.query(Sensers).filter(Sensers.id == sensor_id).first()
+    if not sensor:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Sensor with id {sensor_id} not found",
+        )
+    return sensor
+
+
+@router.put("/{sensor_id}", response_model=SensorResponse)
+def update_sensor(
+    sensor_id: int,
+    sensor_in: SensorCreate,
+    db: Session = Depends(get_db),
+):
+    """センサー情報を更新します"""
+    sensor = db.query(Sensers).filter(Sensers.id == sensor_id).first()
+    if not sensor:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Sensor with id {sensor_id} not found",
+        )
+    for key, value in sensor_in.model_dump().items():
+        setattr(sensor, key, value)
+    db.commit()
+    db.refresh(sensor)
+    return sensor
+
+
+@router.delete("/{sensor_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_sensor(sensor_id: int, db: Session = Depends(get_db)):
+    """センサーを削除します"""
+    sensor = db.query(Sensers).filter(Sensers.id == sensor_id).first()
+    if not sensor:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Sensor with id {sensor_id} not found",
+        )
+    db.delete(sensor)
+    db.commit()
+    return None
 
 
 @router.post("/event", response_model=SensorResponse)

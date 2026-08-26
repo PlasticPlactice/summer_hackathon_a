@@ -63,3 +63,38 @@ def get_parking_status(parking_id: int, db: Session = Depends(get_db)):
         )
 
     return build_parking_status_response(parking, db)
+
+
+@router.put("/{parking_id}", response_model=ParkingStatusResponse)
+def update_parking(
+    parking_id: int,
+    parking_in: ParkingCreate,
+    db: Session = Depends(get_db),
+):
+    """駐車場情報を更新します"""
+    parking = db.query(Parking).filter(Parking.id == parking_id).first()
+    if not parking:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Parking with id {parking_id} not found",
+        )
+    for key, value in parking_in.model_dump().items():
+        setattr(parking, key, value)
+    db.commit()
+    db.refresh(parking)
+    return build_parking_status_response(parking, db)
+
+
+@router.delete("/{parking_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_parking(parking_id: int, db: Session = Depends(get_db)):
+    """駐車場を削除します"""
+    parking = db.query(Parking).filter(Parking.id == parking_id).first()
+    if not parking:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Parking with id {parking_id} not found",
+        )
+    db.delete(parking)
+    db.commit()
+    return None
+

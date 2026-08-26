@@ -1,13 +1,15 @@
-"""テスト用の共通フィクスチャを定義"""
+# """テスト用の共通フィクスチャを定義"""
 import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from fastapi.testclient import TestClient
+from sqlalchemy.pool import StaticPool
 import pytest
 
 from app.db.base import Base
 from app.db.session import get_db
-from app.main import app
+from app.main import app as fastapi_app
+import app.models  # noqa: F401
 
 # テスト用データベース URL (SQLite インメモリ)
 TEST_DATABASE_URL = "sqlite:///:memory:"
@@ -19,6 +21,7 @@ def test_db():
     engine = create_engine(
         TEST_DATABASE_URL,
         connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
     )
     
     # テーブルを作成
@@ -34,7 +37,7 @@ def test_db():
             db.close()
     
     # 依存性を上書き
-    app.dependency_overrides[get_db] = override_get_db
+    fastapi_app.dependency_overrides[get_db] = override_get_db
     
     db = TestingSessionLocal()
     yield db
@@ -47,4 +50,4 @@ def test_db():
 @pytest.fixture(scope="function")
 def client(test_db):
     """テストクライアントを作成"""
-    return TestClient(app)
+    return TestClient(fastapi_app)
