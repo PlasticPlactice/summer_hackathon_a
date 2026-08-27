@@ -1,7 +1,11 @@
+import ExplanatoryNotes from "./component/explanatoryNotes";
+
 export default function Home() {
   return (
-    <main className="p-4">
+    <main className="p-4 flex flex-col gap-4">
+      {/* 検索 */}
       <div className="search flex flex-col gap-4">
+        {/* エリア種別の選択 */}
         <div className="type-selection flex flex-col gap-2">
           <h3 className="text-xs font-bold">エリア種別</h3>
           <select className="type-select text-xs border rounded-sm p-1 border-gray-300 w-24">
@@ -10,6 +14,7 @@ export default function Home() {
             <option value="PA">PA</option>
           </select>
         </div>
+        {/* エリア名入力 */}
         <div className="search-box flex flex-col gap-2">
           <h3 className="text-xs font-bold">エリア名</h3>
           <div className="search-container flex items-center">
@@ -24,6 +29,12 @@ export default function Home() {
             </button>
           </div>
         </div>
+      </div>
+      {/* 凡例 */}
+      <div className="explanatory-notes flex gap-5">
+        <ExplanatoryNotes label="空き" color="#80FFEC" />
+        <ExplanatoryNotes label="混雑" color="#FFBC4C" />
+        <ExplanatoryNotes label="満車" color="#FF4E51" />
       </div>
     </main>
   );
