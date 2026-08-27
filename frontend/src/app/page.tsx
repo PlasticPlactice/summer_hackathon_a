@@ -1,6 +1,64 @@
 import ExplanatoryNotes from "./component/explanatoryNotes";
 import AreaListItem from "./component/areaListItem/areaListItem";
 
+// ダミーのデータ
+const MOCK_DATA = [
+  {
+    id: 1,
+    title: "前沢SA",
+    color: "#FFBC4C",
+    parkingTotalNumLarge: 48,
+    parkingTotalNumsmall: 158,
+    parkingUsedNumLarge: 20,
+    parkingUsedNumsmall: 74,
+  },
+  {
+    id: 2,
+    title: "紫波SA",
+    color: "#80FFEC",
+    parkingTotalNumLarge: 82,
+    parkingTotalNumsmall: 176,
+    parkingUsedNumLarge: 5,
+    parkingUsedNumsmall: 5,
+  },
+  {
+    id: 3,
+    title: "岩手山SA",
+    color: "#FFBC4C",
+    parkingTotalNumLarge: 64,
+    parkingTotalNumsmall: 182,
+    parkingUsedNumLarge: 30,
+    parkingUsedNumsmall: 91,
+  },
+  {
+    id: 4,
+    title: "矢巾PA",
+    color: "#FF4E51",
+    parkingTotalNumLarge: 24,
+    parkingTotalNumsmall: 62,
+    parkingUsedNumLarge: 24,
+    parkingUsedNumsmall: 62,
+  },
+  {
+    id: 5,
+    title: "滝沢SA",
+    color: "#80FFEC",
+    parkingTotalNumLarge: 51,
+    parkingTotalNumsmall: 36,
+    parkingUsedNumLarge: 5,
+    parkingUsedNumsmall: 5,
+  },
+  {
+    id: 6,
+    title: "上河内SA",
+    color: "#80FFEC",
+    parkingTotalNumLarge: 98,
+    parkingTotalNumsmall: 239,
+    parkingUsedNumLarge: 5,
+    parkingUsedNumsmall: 5,
+  }
+]
+
 export default function Home() {
   return (
     <main className="p-4 flex flex-col gap-4">
@@ -39,10 +97,17 @@ export default function Home() {
       </div>
       {/* エリア一覧 */}
       <div className="area-list flex flex-wrap justify-between gap-5">
-        <AreaListItem title="前沢SA" color="#FFBC4C" parkingTotalNumLarge={48} parkingTotalNumsmall={158} parkingUsedNumLarge={20} parkingUsedNumsmall={74}/>
-        <AreaListItem title="前沢SA" color="#FFBC4C" parkingTotalNumLarge={48} parkingTotalNumsmall={158} parkingUsedNumLarge={20} parkingUsedNumsmall={74}/>
-        <AreaListItem title="前沢SA" color="#FFBC4C" parkingTotalNumLarge={48} parkingTotalNumsmall={158} parkingUsedNumLarge={20} parkingUsedNumsmall={74}/>
-        <AreaListItem title="前沢SA" color="#FFBC4C" parkingTotalNumLarge={48} parkingTotalNumsmall={158} parkingUsedNumLarge={20} parkingUsedNumsmall={74}/>
+      {MOCK_DATA.map((item) => (
+        <AreaListItem 
+          key={item.id}
+          title={item.title} 
+          color={item.color} 
+          parkingTotalNumLarge={item.parkingTotalNumLarge} 
+          parkingTotalNumsmall={item.parkingTotalNumsmall} 
+          parkingUsedNumLarge={item.parkingUsedNumLarge} 
+          parkingUsedNumsmall={item.parkingUsedNumsmall} 
+        />
+      ))}
       </div>
     </main>
   );
