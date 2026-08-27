@@ -1,4 +1,5 @@
 import ExplanatoryNotes from "./component/explanatoryNotes";
+import AreaListItem from "./component/areaListItem/areaListItem";
 
 export default function Home() {
   return (
@@ -35,6 +36,13 @@ export default function Home() {
         <ExplanatoryNotes label="空き" color="#80FFEC" />
         <ExplanatoryNotes label="混雑" color="#FFBC4C" />
         <ExplanatoryNotes label="満車" color="#FF4E51" />
+      </div>
+      {/* エリア一覧 */}
+      <div className="area-list flex flex-wrap justify-between gap-5">
+        <AreaListItem title="前沢SA" color="#FFBC4C" parkingTotalNumLarge={48} parkingTotalNumsmall={158} parkingUsedNumLarge={20} parkingUsedNumsmall={74}/>
+        <AreaListItem title="前沢SA" color="#FFBC4C" parkingTotalNumLarge={48} parkingTotalNumsmall={158} parkingUsedNumLarge={20} parkingUsedNumsmall={74}/>
+        <AreaListItem title="前沢SA" color="#FFBC4C" parkingTotalNumLarge={48} parkingTotalNumsmall={158} parkingUsedNumLarge={20} parkingUsedNumsmall={74}/>
+        <AreaListItem title="前沢SA" color="#FFBC4C" parkingTotalNumLarge={48} parkingTotalNumsmall={158} parkingUsedNumLarge={20} parkingUsedNumsmall={74}/>
       </div>
     </main>
   );
