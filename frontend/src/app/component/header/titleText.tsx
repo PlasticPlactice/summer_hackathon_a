@@ -1,8 +1,8 @@
 function TitleText(){
     return(
         // アプリ名
-        <div className="w-32 h-10 py-0.5 rounded-sm text-center items-baseline">
-            <p className="text-2xl text-white">ParkNow</p>
+        <div className="py-0.5 rounded-sm items-baseline {bizUDGothic.className}">
+            <p className="text-lg font-bold text-center" style={{color: "#0095FF"}}>ParkNow</p>
         </div>
     )
 }
