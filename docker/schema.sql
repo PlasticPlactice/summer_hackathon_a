@@ -17,6 +17,11 @@ CREATE TABLE IF NOT EXISTS sensors (
 
 CREATE TABLE IF NOT EXISTS parking_spaces (
     id SERIAL PRIMARY KEY,
+    parking_number INTEGER NOT NULL,
+    x FLOAT,
+    y FLOAT,
+    width FLOAT,
+    height FLOAT,
     type VARCHAR NOT NULL,
     status SMALLINT NOT NULL,
     parking_id INTEGER REFERENCES parkings(id) ON DELETE CASCADE,
