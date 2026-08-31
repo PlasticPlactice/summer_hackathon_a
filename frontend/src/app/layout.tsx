@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import BaseScreen from "./component/baseScreen";
-import Header from "./component/header/header";
+import HeaderGate from "./component/header/headerGate";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,7 +28,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col">
         <div className="bg-green-50">
           <BaseScreen>
-            <Header />
+            <HeaderGate />
             {children}
           </BaseScreen>
         </div>
