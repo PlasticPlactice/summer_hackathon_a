@@ -31,7 +31,7 @@ const MOCK_DATA = [
     color: "#FFBC4C",
     parkingTotalNumLarge: 64,
     parkingTotalNumsmall: 182,
-    parkingUsedNumLarge: 30,
+    parkingUsedNumLarge: 50,
     parkingUsedNumsmall: 91,
     areaType: "SA"
   },
@@ -136,7 +136,7 @@ export default function Home() {
         <ExplanatoryNotes label="満車" color="#FF4E51" />
       </div>
       {/* エリア一覧 */}
-      <div className="area-list flex flex-wrap justify-between gap-5">
+      <div className="area-list flex flex-col justify-between gap-5">
       {filteredData.length > 0 ? (
           filteredData.map((item) => (
             <AreaListItem
