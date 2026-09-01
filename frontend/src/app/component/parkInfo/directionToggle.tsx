@@ -1,13 +1,29 @@
-function DirectionToggle() {
+import Link from "next/link";
+
+interface DirectionToggleProps {
+  direction: "up" | "down";
+}
+
+function DirectionToggle({ direction }: DirectionToggleProps) {
   return (
-    // 上り/下り切替ボタン
+    // 上り/下り切替リンク(?dir=up / ?dir=down でページ全体を再取得する)
     <div className="flex gap-2 my-1">
-      <button className="rounded-full bg-[#0095ff] px-4 py-1.5 text-xs font-bold text-white">
+      <Link
+        href="/parkInfo?dir=up"
+        className={`rounded-full px-4 py-1.5 text-xs font-bold ${
+          direction === "up" ? "bg-[#0095ff] text-white" : "bg-[#ebedf0] text-[#595959]"
+        }`}
+      >
         上り
-      </button>
-      <button className="rounded-full bg-[#ebedf0] px-4 py-1.5 text-xs text-[#595959]">
+      </Link>
+      <Link
+        href="/parkInfo?dir=down"
+        className={`rounded-full px-4 py-1.5 text-xs font-bold ${
+          direction === "down" ? "bg-[#0095ff] text-white" : "bg-[#ebedf0] text-[#595959]"
+        }`}
+      >
         下り
-      </button>
+      </Link>
     </div>
   );
 }
