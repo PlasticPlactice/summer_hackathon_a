@@ -2,10 +2,11 @@ type PercentageProps = {
     rate: number;
 }
 
+// 満車率に応じて色を返す関数
 function getColorClass(rate: number): string {
   if (rate >= 90) return '#FF4E51';
-  if (rate >= 70) return '#FFBC4C';
-  return '#80FFEC';
+  if (rate >= 60) return '#FFBC4C';
+  return '#4EFA4D';
 }
 
 export default function Percentage({ rate }: PercentageProps) {
