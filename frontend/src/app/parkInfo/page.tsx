@@ -1,44 +1,46 @@
-import ParkInfo from "../component/parkInfo/parkInfo";
-import ParkMap from "../component/parkInfo/parkMap/parkMap";
-import { buildParkingRows, RowLayout } from "../component/parkInfo/parkMap/buildParkingRows";
-import { calcVehicleCounts } from "../component/parkInfo/parkMap/calcVehicleCounts";
-import { ParkingSpace } from "../../types/parking";
+import ParkInfoClient from "../component/parkInfo/parkInfoClient";
+import { RowLayout } from "../component/parkInfo/parkMap/buildParkingRows";
+import { ParkingStatus } from "../../types/parking";
 
-// SA名
-const saName = "前沢SA";
-
-type Direction = "up" | "down";
-
-// 上り/下りと、対応する駐車場id(バックエンドのDB初期データでは 上り=1, 下り=2 として登録されている)
-const PARKING_ID_BY_DIRECTION: Record<Direction, number> = {
-  up: 1,
-  down: 2,
+// 駐車場idごとのレイアウト設定(バックエンドにレイアウト情報は無いためフロント側で保持する)
+// rowLayout: 列ごとの構成(行のtype(car/track)と各枠数)。実際の満車状況・idはバックエンドから
+// 取得したParkingSpace[]を先頭から順に割り当てる(合計枚数は各駐車場の実データに合わせている)
+// flipped: マップを上下左右反転して表示するか(下り方向の駐車場で使用)
+type ParkingLayoutConfig = {
+  rowLayout: RowLayout[];
+  flipped: boolean;
 };
 
-// 駐車場の列ごとの構成。行のtype(car/track)と各枠数のみ定義する(表示レイアウト専用の情報)
-// 実際の満車状況・idはバックエンドから取得したParkingSpace[]を先頭から順に割り当てる
-// 合計枚数は各方向の実データ(上り: compact79/large22, 下り: compact79/large26)に合わせている
-// 列は何行でも追加可能(例: 車列を複数にする、トラック列を増やす等)
-const ROW_LAYOUT_BY_DIRECTION: Record<Direction, RowLayout[]> = {
-  up: [
-    { type: "car", slotCount: 17 },
-    { type: "car", slotCount: 17 },
-    { type: "car", slotCount: 15 },
-    { type: "car", slotCount: 15 },
-    { type: "car", slotCount: 15 },
-    { type: "track", slotCount: 11 },
-    { type: "track", slotCount: 11 },
-  ],
-  down: [
-    { type: "car", slotCount: 17 },
-    { type: "car", slotCount: 17 },
-    { type: "car", slotCount: 15 },
-    { type: "car", slotCount: 15 },
-    { type: "car", slotCount: 15 },
-    { type: "track", slotCount: 13 },
-    { type: "track", slotCount: 13 },
-  ],
+// バックエンドのDB初期データでは 前沢PA上り=id1, 前沢PA下り=id2 として登録されている
+const PARKING_LAYOUT_CONFIG: Record<number, ParkingLayoutConfig> = {
+  1: {
+    rowLayout: [
+      { type: "car", slotCount: 17 },
+      { type: "car", slotCount: 17 },
+      { type: "car", slotCount: 15 },
+      { type: "car", slotCount: 15 },
+      { type: "car", slotCount: 15 },
+      { type: "track", slotCount: 11 },
+      { type: "track", slotCount: 11 },
+    ],
+    flipped: false,
+  },
+  2: {
+    rowLayout: [
+      { type: "car", slotCount: 17 },
+      { type: "car", slotCount: 17 },
+      { type: "car", slotCount: 15 },
+      { type: "car", slotCount: 15 },
+      { type: "car", slotCount: 15 },
+      { type: "track", slotCount: 13 },
+      { type: "track", slotCount: 13 },
+    ],
+    flipped: true,
+  },
 };
+
+// デフォルトで表示する駐車場id(parkingId未指定・不正値の場合のフォールバック)
+const DEFAULT_PARKING_ID = 1;
 
 // SAごとの設置施設の有無(将来複数SA/PAを扱う際はSAごとにこの設定を用意する)
 const facilities = {
@@ -50,56 +52,54 @@ const facilities = {
   bed: false,
 };
 
-// バックエンドから駐車スペース一覧を取得する。取得に失敗した場合は空配列を返す
+// バックエンドから指定した駐車場の現在状況を取得する。取得に失敗した場合はnullを返す
 // このfetchはNext.jsサーバー側(=Dockerではfrontendコンテナ内)で実行されるため、
 // ブラウザ向けのNEXT_PUBLIC_API_URLではなく、コンテナ間通信用のAPI_INTERNAL_URLを優先して使う
-async function fetchParkingSpaces(): Promise<ParkingSpace[]> {
+async function fetchParkingStatus(parkingId: number): Promise<ParkingStatus | null> {
   const apiBaseUrl = process.env.API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_URL;
   try {
-    const res = await fetch(`${apiBaseUrl}/api/v1/spaces`, {
+    const res = await fetch(`${apiBaseUrl}/api/v1/parkings/${parkingId}`, {
       cache: "no-store",
     });
     if (!res.ok) {
-      console.error(`駐車スペースの取得に失敗しました: ${res.status}`);
-      return [];
+      console.error(`駐車場情報の取得に失敗しました: ${res.status}`);
+      return null;
     }
-    return (await res.json()) as ParkingSpace[];
+    return (await res.json()) as ParkingStatus;
   } catch (error) {
-    console.error("駐車スペースの取得中にエラーが発生しました", error);
-    return [];
+    console.error("駐車場情報の取得中にエラーが発生しました", error);
+    return null;
   }
 }
 
 type ParkInfoPageProps = {
-  searchParams: Promise<{ dir?: string }>;
+  searchParams: Promise<{ parkingId?: string }>;
 };
 
 export default async function ParkInfoPage({ searchParams }: ParkInfoPageProps) {
-  // ?dir=down のときだけ下り、それ以外(未指定・不正値含む)は上りを表示する
-  const { dir } = await searchParams;
-  const direction: Direction = dir === "down" ? "down" : "up";
+  // parkingId未指定・数値変換できない値の場合はDEFAULT_PARKING_IDにフォールバックする
+  const { parkingId: parkingIdParam } = await searchParams;
+  const parsedParkingId = Number(parkingIdParam);
+  const parkingId =
+    parkingIdParam && Number.isInteger(parsedParkingId) && parsedParkingId > 0
+      ? parsedParkingId
+      : DEFAULT_PARKING_ID;
 
-  const spaces = await fetchParkingSpaces();
-  // 表示対象の駐車場(上り/下り)のスペースのみに絞り込む
-  const targetSpaces = spaces.filter(
-    (space) => space.parking_id === PARKING_ID_BY_DIRECTION[direction]
-  );
-  const parkingRows = buildParkingRows(targetSpaces, ROW_LAYOUT_BY_DIRECTION[direction]);
+  // レイアウト設定が無いid(未登録の駐車場)の場合もDEFAULT_PARKING_IDの設定で表示する
+  const layoutConfig = PARKING_LAYOUT_CONFIG[parkingId] ?? PARKING_LAYOUT_CONFIG[DEFAULT_PARKING_ID];
 
-  // 駐車場規模と現在の空き台数(車種別)はparkingRowsから算出する
-  const { capacity, available } = calcVehicleCounts(parkingRows);
+  const status = await fetchParkingStatus(parkingId);
 
   return (
-    <main  className="overflow-x-hidden">
-      <ParkInfo
-        saName={saName}
-        direction={direction}
-        capacity={capacity}
-        available={available}
+    <main className="overflow-x-hidden">
+      <ParkInfoClient
+        parkingId={parkingId}
+        saName={status?.name ?? "駐車場"}
         facilities={facilities}
+        rowLayout={layoutConfig.rowLayout}
+        flipped={layoutConfig.flipped}
+        initialSpaces={status?.spaces ?? []}
       />
-      {/* 下りは実際の走行方向に合わせてマップを上下左右反転(180度回転)して表示する */}
-      <ParkMap rows={parkingRows} flipped={direction === "down"} />
     </main>
   );
 }

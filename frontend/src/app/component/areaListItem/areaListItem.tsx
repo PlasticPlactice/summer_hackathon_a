@@ -1,3 +1,4 @@
+import Link from "next/link";
 import AreaListContent from "./areaListContent";
 import { calcOccupiedByType } from "./calcOccupiedByType";
 import { ParkingStatus } from "../../../types/parking";
@@ -19,7 +20,7 @@ export default function AreaListItem({ parking,parkingTotalNumLarge,parkingTotal
     const occupied = calcOccupiedByType(parking.spaces);
     const rate = (occupied.compact + occupied.large) / (parkingTotalNumsmall + parkingTotalNumLarge) * 100;
     return (
-            <div className="area-list-item flex flex-col gap-2 p-4 outline-5 rounded-sm" style={{ outlineColor: getColorClass(rate) }}>
+            <Link href={`/parkInfo?parkingId=${parking.id}`} className="area-list-item flex flex-col gap-2 p-4 outline-5 rounded-sm" style={{ outlineColor: getColorClass(rate) }}>
             <div className="flex justify-between items-center">
                 <h2 className="text-base">{parking.name}</h2>
                 <div className="flex gap-2 items-center">
@@ -29,7 +30,7 @@ export default function AreaListItem({ parking,parkingTotalNumLarge,parkingTotal
             </div>
             <AreaListContent title="大型車" totalNum={parkingTotalNumLarge} useNum={occupied.large} imgSrc="/track.svg" />
             <AreaListContent title="小型車" totalNum={parkingTotalNumsmall} useNum={occupied.compact} imgSrc="/car.svg" />
-        </div>
+        </Link>
     )
 
 }
