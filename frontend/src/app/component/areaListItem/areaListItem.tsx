@@ -11,10 +11,16 @@ type AreaListItemProps = {
 
 export default function AreaListItem({ title, color,parkingTotalNumLarge,parkingTotalNumsmall,parkingUsedNumLarge,parkingUsedNumsmall}: AreaListItemProps) {
     return (
-        <div className="area-list-item flex flex-col gap-2 p-4 outline-5 rounded-sm w-43" style={{ outlineColor: color }}>
-            <h1 className="text-base text-center">{title}</h1>
-            <AreaListContent title="駐車可能台数" small={parkingTotalNumsmall} large={parkingTotalNumLarge}/>
-            <AreaListContent title="現在の利用台数" small={parkingUsedNumsmall} large={parkingUsedNumLarge}/>
+        <div className="area-list-item flex flex-col gap-2 p-4 outline-5 rounded-sm" style={{ outlineColor: color }}>
+            <div className="flex justify-between items-center">
+                <h2 className="text-base">{title}</h2>
+                <div className="flex gap-2 items-center">
+                    <h2 className="text-xs" style={{ color: "#A19E9E" }}>満車率</h2>
+                    <h2 className="text-sm ">{Math.round((parkingUsedNumsmall + parkingUsedNumLarge) / (parkingTotalNumsmall + parkingTotalNumLarge) * 100)}%</h2>
+                </div>
+            </div>
+            <AreaListContent title="大型車" totalNum={parkingTotalNumLarge} useNum={parkingUsedNumLarge} imgSrc="/track.svg" />
+            <AreaListContent title="小型車" totalNum={parkingTotalNumsmall} useNum={parkingUsedNumsmall} imgSrc="/car.svg" />
         </div>
     )
 
