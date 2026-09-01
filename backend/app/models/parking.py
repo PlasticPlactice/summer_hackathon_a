@@ -10,3 +10,4 @@ class Parking(Base):
     capacity = Column(Integer, nullable=False)
     compact_capacity = Column(Integer, nullable=False)
     large_capacity = Column(Integer, nullable=False)
+    image_path = Column(String, nullable=True)
