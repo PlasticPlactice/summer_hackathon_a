@@ -17,7 +17,7 @@ export function calcVehicleCounts(rows: ParkRow[]): {
   rows.forEach((row) => {
     const key = row.type === "track" ? "large" : "small";
     capacity[key] += row.slots.length;
-    available[key] += row.slots.filter((slot) => !slot).length;
+    available[key] += row.slots.filter((slot) => slot.status === 0).length;
   });
 
   return { capacity, available };
