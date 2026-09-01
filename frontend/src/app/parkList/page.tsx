@@ -2,70 +2,74 @@
 import ExplanatoryNotes from "../component/explanatoryNotes";
 import AreaListItem from "../component/areaListItem/areaListItem";
 import { useState } from "react";
+import { ParkingSpace, ParkingStatus } from "../../types/parking";
 
-// ダミーのデータ
-const MOCK_DATA = [
-  {
-    id: 1,
-    title: "前沢SA",
-    color: "#FFBC4C",
-    parkingTotalNumLarge: 48,
-    parkingTotalNumsmall: 158,
-    parkingUsedNumLarge: 20,
-    parkingUsedNumsmall: 74,
-    areaType: "SA"
-  },
-  {
-    id: 2,
-    title: "紫波SA",
-    color: "#80FFEC",
-    parkingTotalNumLarge: 82,
-    parkingTotalNumsmall: 176,
-    parkingUsedNumLarge: 5,
-    parkingUsedNumsmall: 5,
-    areaType: "SA"
-  },
-  {
-    id: 3,
-    title: "岩手山SA",
-    color: "#FFBC4C",
-    parkingTotalNumLarge: 64,
-    parkingTotalNumsmall: 182,
-    parkingUsedNumLarge: 30,
-    parkingUsedNumsmall: 91,
-    areaType: "SA"
-  },
-  {
-    id: 4,
-    title: "矢巾PA",
-    color: "#FF4E51",
-    parkingTotalNumLarge: 24,
-    parkingTotalNumsmall: 62,
-    parkingUsedNumLarge: 24,
-    parkingUsedNumsmall: 62,
-    areaType: "PA"
-  },
-  {
-    id: 5,
-    title: "滝沢SA",
-    color: "#80FFEC",
-    parkingTotalNumLarge: 51,
-    parkingTotalNumsmall: 36,
-    parkingUsedNumLarge: 5,
-    parkingUsedNumsmall: 5,
-    areaType: "SA"
-  },
-  {
-    id: 6,
-    title: "上河内SA",
-    color: "#80FFEC",
-    parkingTotalNumLarge: 98,
-    parkingTotalNumsmall: 239,
-    parkingUsedNumLarge: 5,
-    parkingUsedNumsmall: 5,
-    areaType: "SA"
-  }
-]
+// areaType(SA/PA)とcolor(混雑度による色分け)はバックエンドのスキーマに存在しないUI専用の情報
+// (将来API接続する際は、バックエンド側に区分を持たせるか、フロント側で名称等から判定するロジックが別途必要)
+type ParkingListItem = ParkingStatus & {
+  color: string;
+  areaType: "SA" | "PA";
+};
+
+// ダミーのデータ。台数はここで直接編集して調整する(将来的にはAPIから取得したParkingStatus[]に置き換える)
+type RawParkingMock = {
+  id: number;
+  name: string;
+  color: string;
+  areaType: "SA" | "PA";
+  compact_capacity: number;
+  large_capacity: number;
+  compact_used: number;
+  large_used: number;
+};
+
+const RAW_MOCK_DATA: RawParkingMock[] = [
+  { id: 1, name: "前沢SA", color: "#FFBC4C", areaType: "SA", compact_capacity: 158, large_capacity: 48, compact_used: 74, large_used: 20 },
+  { id: 2, name: "紫波SA", color: "#80FFEC", areaType: "SA", compact_capacity: 176, large_capacity: 82, compact_used: 5, large_used: 5 },
+  { id: 3, name: "岩手山SA", color: "#FFBC4C", areaType: "SA", compact_capacity: 182, large_capacity: 64, compact_used: 91, large_used: 30 },
+  { id: 4, name: "矢巾PA", color: "#FF4E51", areaType: "PA", compact_capacity: 62, large_capacity: 24, compact_used: 62, large_used: 24 },
+  { id: 5, name: "滝沢SA", color: "#80FFEC", areaType: "SA", compact_capacity: 36, large_capacity: 51, compact_used: 5, large_used: 5 },
+  { id: 6, name: "上河内SA", color: "#80FFEC", areaType: "SA", compact_capacity: 239, large_capacity: 98, compact_used: 5, large_used: 5 },
+];
+
+// RawParkingMock(手編集用の集計値)からParkingStatus形状(spaces込み)を組み立てる
+// (id等はダミー。将来的にはこの関数ごとAPIレスポンスの利用に置き換える)
+let nextSpaceId = 1;
+function buildParkingListItem(raw: RawParkingMock): ParkingListItem {
+  const spaces: ParkingSpace[] = [
+    ...Array.from({ length: raw.compact_capacity }, (_, i) => ({
+      id: nextSpaceId++,
+      type: "compact",
+      status: i < raw.compact_used ? 1 : 0,
+      parking_id: raw.id,
+      sensor_id: null,
+    })),
+    ...Array.from({ length: raw.large_capacity }, (_, i) => ({
+      id: nextSpaceId++,
+      type: "large",
+      status: i < raw.large_used ? 1 : 0,
+      parking_id: raw.id,
+      sensor_id: null,
+    })),
+  ];
+  const capacity = raw.compact_capacity + raw.large_capacity;
+  const occupied_spaces = raw.compact_used + raw.large_used;
+
+  return {
+    id: raw.id,
+    name: raw.name,
+    capacity,
+    compact_capacity: raw.compact_capacity,
+    large_capacity: raw.large_capacity,
+    available_spaces: capacity - occupied_spaces,
+    occupied_spaces,
+    spaces,
+    color: raw.color,
+    areaType: raw.areaType,
+  };
+}
+
+const MOCK_DATA: ParkingListItem[] = RAW_MOCK_DATA.map(buildParkingListItem);
 
 export default function ParkList() {
   // 検索条件用のstate
@@ -83,7 +87,7 @@ export default function ParkList() {
     const matchType = areaType === "none" ? true : item.areaType === areaType;
 
     // エリア名のフィルタ（部分一致）
-    const matchName = keyword === "" ? true : item.title.includes(keyword);
+    const matchName = keyword === "" ? true : item.name.includes(keyword);
 
     return matchType && matchName;
   });
@@ -141,12 +145,8 @@ export default function ParkList() {
           filteredData.map((item) => (
             <AreaListItem
               key={item.id}
-              title={item.title}
               color={item.color}
-              parkingTotalNumLarge={item.parkingTotalNumLarge}
-              parkingTotalNumsmall={item.parkingTotalNumsmall}
-              parkingUsedNumLarge={item.parkingUsedNumLarge}
-              parkingUsedNumsmall={item.parkingUsedNumsmall}
+              parking={item}
             />
           ))
         ) : (

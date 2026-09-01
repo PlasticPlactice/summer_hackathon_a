@@ -6,11 +6,10 @@ import { calcVehicleCounts } from "../component/parkInfo/parkMap/calcVehicleCoun
 // SA名
 const saName = "前沢SA";
 
-// 駐車場の列ごとの構成。値はここで直接編集して調整する
-// (将来的にはAPIやセンサーから取得したデータに置き換える)
+// 駐車場の列ごとの構成。行のtype(car/track)と各枠の満車状況(true=満車)はここで直接編集して調整する
+// (将来的にはAPIやセンサーから取得したParkingSpace[]に置き換える)
 // 列は何行でも追加可能(例: 車列を複数にする、トラック列を増やす等)
-// slots: 駐車枠ごとの満車状況(true=満車)
-const parkingRows: ParkRow[] = [
+const rawParkingRows: { type: "car" | "track"; slots: boolean[] }[] = [
   {
     type: "car",
     slots: [
@@ -50,6 +49,19 @@ const parkingRows: ParkRow[] = [
     slots: [true, true, false, true, true, false, true, true, true, true, true],
   },
 ];
+
+// 満車状況(boolean)をParkingSpace形状に変換する(id/parking_id/sensor_idは今はダミー)
+let nextSpaceId = 1;
+const parkingRows: ParkRow[] = rawParkingRows.map((row) => ({
+  type: row.type,
+  slots: row.slots.map((occupied) => ({
+    id: nextSpaceId++,
+    type: row.type === "track" ? "large" : "compact",
+    status: occupied ? 1 : 0,
+    parking_id: null,
+    sensor_id: null,
+  })),
+}));
 
 // SAごとの設置施設の有無(将来複数SA/PAを扱う際はSAごとにこの設定を用意する)
 const facilities = {

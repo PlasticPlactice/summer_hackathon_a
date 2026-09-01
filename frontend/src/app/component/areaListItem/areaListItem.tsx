@@ -1,20 +1,19 @@
 import AreaListContent from "./areaListContent";
+import { calcOccupiedByType } from "./calcOccupiedByType";
+import { ParkingStatus } from "../../../types/parking";
 
 type AreaListItemProps = {
-    title: string;
     color: string;
-    parkingTotalNumLarge: number;
-    parkingTotalNumsmall: number;
-    parkingUsedNumLarge: number;
-    parkingUsedNumsmall: number;
+    parking: ParkingStatus;
 }
 
-export default function AreaListItem({ title, color,parkingTotalNumLarge,parkingTotalNumsmall,parkingUsedNumLarge,parkingUsedNumsmall}: AreaListItemProps) {
+export default function AreaListItem({ color, parking }: AreaListItemProps) {
+    const occupied = calcOccupiedByType(parking.spaces);
     return (
         <div className="area-list-item flex flex-col gap-2 p-4 outline-5 rounded-sm w-43" style={{ outlineColor: color }}>
-            <h1 className="text-base text-center">{title}</h1>
-            <AreaListContent title="駐車可能台数" small={parkingTotalNumsmall} large={parkingTotalNumLarge}/>
-            <AreaListContent title="現在の利用台数" small={parkingUsedNumsmall} large={parkingUsedNumLarge}/>
+            <h1 className="text-base text-center">{parking.name}</h1>
+            <AreaListContent title="駐車可能台数" small={parking.compact_capacity} large={parking.large_capacity}/>
+            <AreaListContent title="現在の利用台数" small={occupied.compact} large={occupied.large}/>
         </div>
     )
 
