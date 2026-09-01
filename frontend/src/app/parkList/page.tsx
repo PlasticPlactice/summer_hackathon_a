@@ -24,12 +24,12 @@ type RawParkingMock = {
 };
 
 const RAW_MOCK_DATA: RawParkingMock[] = [
-  { id: 1, name: "前沢SA", color: "#FFBC4C", areaType: "SA", compact_capacity: 158, large_capacity: 48, compact_used: 74, large_used: 20 },
-  { id: 2, name: "紫波SA", color: "#80FFEC", areaType: "SA", compact_capacity: 176, large_capacity: 82, compact_used: 5, large_used: 5 },
-  { id: 3, name: "岩手山SA", color: "#FFBC4C", areaType: "SA", compact_capacity: 182, large_capacity: 64, compact_used: 91, large_used: 30 },
+  { id: 1, name: "前沢SA", color: "#FFBC4C", areaType: "SA", compact_capacity: 158, large_capacity: 48, compact_used: 100, large_used: 40 },
+  { id: 2, name: "紫波SA", color: "#4EFA4D", areaType: "SA", compact_capacity: 176, large_capacity: 82, compact_used: 5, large_used: 5 },
+  { id: 3, name: "岩手山SA", color: "#FFBC4C", areaType: "SA", compact_capacity: 182, large_capacity: 64, compact_used: 100, large_used: 60 },
   { id: 4, name: "矢巾PA", color: "#FF4E51", areaType: "PA", compact_capacity: 62, large_capacity: 24, compact_used: 62, large_used: 24 },
-  { id: 5, name: "滝沢SA", color: "#80FFEC", areaType: "SA", compact_capacity: 36, large_capacity: 51, compact_used: 5, large_used: 5 },
-  { id: 6, name: "上河内SA", color: "#80FFEC", areaType: "SA", compact_capacity: 239, large_capacity: 98, compact_used: 5, large_used: 5 },
+  { id: 5, name: "滝沢SA", color: "#4EFA4D", areaType: "SA", compact_capacity: 36, large_capacity: 51, compact_used: 5, large_used: 5 },
+  { id: 6, name: "上河内SA", color: "#4EFA4D", areaType: "SA", compact_capacity: 239, large_capacity: 98, compact_used: 5, large_used: 5 },
 ];
 
 // RawParkingMock(手編集用の集計値)からParkingStatus形状(spaces込み)を組み立てる
@@ -135,18 +135,19 @@ export default function ParkList() {
       </div>
       {/* 凡例 */}
       <div className="explanatory-notes flex gap-5">
-        <ExplanatoryNotes label="空き" color="#80FFEC" />
+        <ExplanatoryNotes label="空き" color="#4EFA4D" />
         <ExplanatoryNotes label="混雑" color="#FFBC4C" />
         <ExplanatoryNotes label="満車" color="#FF4E51" />
       </div>
       {/* エリア一覧 */}
-      <div className="area-list flex flex-wrap justify-between gap-5">
+      <div className="area-list flex flex-col justify-between gap-5">
       {filteredData.length > 0 ? (
           filteredData.map((item) => (
             <AreaListItem
               key={item.id}
-              color={item.color}
               parking={item}
+              parkingTotalNumLarge={item.large_capacity}
+              parkingTotalNumsmall={item.compact_capacity}
             />
           ))
         ) : (
