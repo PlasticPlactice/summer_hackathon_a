@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.api.routes import health, parkings, sensors, spaces, yolo
+from app.api.routes import health, parkings, sensors, spaces, sensor_response
 
 api_router = APIRouter()
 api_router.include_router(health.router)
