@@ -36,7 +36,11 @@ services:
     ports:
       - "3000:3000"
     environment:
+      # ブラウザ(クライアント側)からのアクセス用。ホストマシンに公開されたポートを指す
       NEXT_PUBLIC_API_URL: http://localhost:8000
+      # サーバーコンポーネント(Next.jsサーバー = このコンテナ自身)からのアクセス用。
+      # docker-composeネットワーク上のサービス名で名前解決する
+      API_INTERNAL_URL: http://backend:8000
     volumes:
       - ./frontend:/app
       - /app/node_modules

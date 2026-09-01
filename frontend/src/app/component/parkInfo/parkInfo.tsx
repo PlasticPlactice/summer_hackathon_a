@@ -11,19 +11,20 @@ type VehicleCount = {
 
 type ParkInfoProps = {
   saName: string;
+  direction: "up" | "down";
   capacity: VehicleCount;
   available: VehicleCount;
   facilities: Record<FacilityKey, boolean>;
 };
 
-function ParkInfo({ saName, capacity, available, facilities }: ParkInfoProps) {
+function ParkInfo({ saName, direction, capacity, available, facilities }: ParkInfoProps) {
   return (
     <div className="parkInfo flex flex-col">
       {/* SA情報バー */}
       <div className="flex flex-col gap-2.5 p-4 border-b border-gray-200">
         <SaInfoBar saName={saName} />
         {/* 上り/下り切替 */}
-        <DirectionToggle />
+        <DirectionToggle direction={direction} />
         {/* 台数サマリー */}
         <CapacitySummary capacity={capacity} available={available} />
       </div>
