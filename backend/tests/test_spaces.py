@@ -24,7 +24,7 @@ def test_create_parking_space(client: TestClient, test_db: Session):
     
     assert response.status_code == 201
     data = response.json()
-    assert data["type"] == "standard"
+    assert data["type"] == "compact"
     assert data["status"] == 0
     assert data["parking_id"] == parking.id
     assert data["sensor_id"] == sensor.id
@@ -49,7 +49,7 @@ def test_get_all_spaces(client: TestClient, test_db: Session):
     assert response.status_code == 200
     data = response.json()
     assert len(data) == 2
-    assert data[0]["type"] == "standard"
+    assert data[0]["type"] == "compact"
     assert data[1]["type"] == "compact"
 
 
@@ -70,7 +70,7 @@ def test_get_space_by_id(client: TestClient, test_db: Session):
     assert response.status_code == 200
     data = response.json()
     assert data["id"] == space.id
-    assert data["type"] == "standard"
+    assert data["type"] == "compact"
     assert data["status"] == 0
 
 

@@ -1,6 +1,20 @@
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
+
+
+def normalize_space_type(value: str | None) -> str:
+    """旧データの "standard" / "normal" を新しい "compact" / "large" に正規化する。"""
+    if value is None:
+        return value  # type: ignore[return-value]
+
+    normalized = str(value).strip().lower()
+    legacy_aliases = {"standard", "normal"}
+    if normalized in legacy_aliases:
+        return "compact"
+    if normalized in {"compact", "large"}:
+        return normalized
+    raise ValueError(f"Unsupported parking space type: {value}")
 
 
 class ParkingSpaceBase(BaseModel):
@@ -12,6 +26,11 @@ class ParkingSpaceBase(BaseModel):
     y: float | None = None
     width: float | None = None
     height: float | None = None
+
+    @field_validator("type", mode="before")
+    @classmethod
+    def validate_type(cls, value):
+        return normalize_space_type(value)
 
 
 class ParkingSpaceCreate(ParkingSpaceBase):
@@ -27,6 +46,13 @@ class ParkingSpaceUpdate(BaseModel):
     y: float | None = None
     width: float | None = None
     height: float | None = None
+
+    @field_validator("type", mode="before")
+    @classmethod
+    def validate_type(cls, value):
+        if value is None:
+            return None
+        return normalize_space_type(value)
 
 
 class ParkingSpaceResponse(ParkingSpaceBase):
@@ -51,6 +77,11 @@ class ParkingSpacePreviewCreate(BaseModel):
     height: int
     confidence: float
     type: Literal["compact", "large"] = "compact"
+
+    @field_validator("type", mode="before")
+    @classmethod
+    def validate_type(cls, value):
+        return normalize_space_type(value)
 
 
 class ParkingPreviewResponse(BaseModel):
