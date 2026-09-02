@@ -11,6 +11,12 @@ class SensorCreate(SensorBase):
     pass
 
 
+class SensorBatchCreate(BaseModel):
+    count: int = 1
+    prefix: str = "SENSOR_UP_"
+    status: int = 0
+
+
 class SensorUpdate(BaseModel):
     device_id: str | None = None
     status: int | None = None
