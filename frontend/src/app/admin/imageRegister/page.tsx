@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 
-// 選択可能なパーキングの候補(ダミーデータ)
-const PARKING_OPTIONS = ["東北自動車道 - 前沢SA（上り）"];
-
 export default function ImageRegisterPage() {
-  // 選択中の駐車場
+  // 駐車場名の入力
   const [parking, setParking] = useState("");
+  // 大型車の駐車可能台数
+  const [largeCapacity, setLargeCapacity] = useState("");
+  // 小型車の駐車可能台数
+  const [smallCapacity, setSmallCapacity] = useState("");
   // 選択された画像ファイル
   const [file, setFile] = useState<File | null>(null);
   // ドラッグ中かどうか
@@ -18,8 +19,13 @@ export default function ImageRegisterPage() {
   // ファイル選択inputへの参照(削除時に選択状態をリセットし、同じファイルを選び直せるようにする)
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // 登録ボタンを活性化する条件
-  const canRegister = parking !== "" && file !== null && confirmed;
+  // 登録ボタンを活性化する条件(すべての必須項目が入力・選択されているか)
+  const canRegister =
+    parking !== "" &&
+    largeCapacity !== "" &&
+    smallCapacity !== "" &&
+    file !== null &&
+    confirmed;
 
   const handleFiles = (files: FileList | null) => {
     if (files && files[0]) {
@@ -51,7 +57,7 @@ export default function ImageRegisterPage() {
 
   return (
     <main className="flex w-full flex-col items-center bg-white pb-10">
-      <div className="flex w-full max-w-[390px] flex-col">
+      <div className="flex w-full max-w-[390px] flex-col gap-5">
         {/* 戻るボタン */}
         <Link href="/admin" className="flex items-center gap-2 px-4 py-3 text-black">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -59,41 +65,55 @@ export default function ImageRegisterPage() {
           </svg>
           <span className="text-xs">戻る</span>
         </Link>
-
-        {/* 登録するパーキング */}
-        <section className="flex flex-col gap-3 px-4 pt-2 pb-6">
+        {/* 登録するパーキング名 */}
+        <section className="flex flex-col gap-3 px-4">
           <h2 className="text-base text-black">
-            登録するパーキング<span className="text-red-500">*</span>
+            パーキングの名前<span className="text-red-500">*</span>
           </h2>
-          <div className="relative w-full max-w-[250px]">
-            <select
-              className="w-full appearance-none rounded-[5px] border border-[#a1a1a1] px-2 py-1 text-xs text-black"
-              value={parking}
-              onChange={(e) => setParking(e.target.value)}
-            >
-              <option value="" disabled>
-                パーキングを選択
-              </option>
-              {PARKING_OPTIONS.map((name) => (
-                <option key={name} value={name}>
-                  {name}
-                </option>
-              ))}
-            </select>
-            <svg
-              className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2"
-              width="10"
-              height="10"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="black"
-              strokeWidth="2"
-            >
-              <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </div>
+          <input
+            type="text"
+            value={parking}
+            onChange={(e) => setParking(e.target.value)}
+            placeholder="例：東北自動車道 - 前沢SA（上り）"
+            className="w-full rounded-[5px] border border-[#a1a1a1] px-2 py-1 text-xs text-black placeholder:text-[#a1a1a1]"
+          />
         </section>
-
+        {/* パーキングの駐車場規模 */}
+        <section className="flex flex-col gap-3 px-4">
+          <h2 className="text-base text-black">
+            パーキングの駐車場規模<span className="text-red-500">*</span>
+          </h2>
+          <section>
+            <label className="text-xs text-black font-bold">
+              大型車(バス、大型トラック)
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                value={largeCapacity}
+                onChange={(e) => setLargeCapacity(e.target.value)}
+                placeholder="例：100"
+                className="w-full rounded-[5px] border border-[#a1a1a1] px-2 py-1 text-xs text-black placeholder:text-[#a1a1a1]"
+              />
+              <p className="text-xs text-black">台</p>
+            </div>
+          </section>
+          <section>
+            <label className="text-xs text-black font-bold">
+              小型車(一般車、軽自動車)
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                value={smallCapacity}
+                onChange={(e) => setSmallCapacity(e.target.value)}
+                placeholder="例：100"
+                className="w-full rounded-[5px] border border-[#a1a1a1] px-2 py-1 text-xs text-black placeholder:text-[#a1a1a1]"
+              />
+              <p className="text-xs text-black">台</p>
+            </div>
+          </section>
+        </section>
         {/* 駐車場の写真をインポート */}
         <section className="flex flex-col gap-3 px-4">
           <h2 className="text-base text-black">
