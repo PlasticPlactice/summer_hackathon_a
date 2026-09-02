@@ -1,11 +1,12 @@
 from datetime import datetime
+import re
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.models.sensor import Sensor
 from app.models.spaces import Parking_spaces
-from app.schemas.sensor import SensorCreate, SensorEventRequest, SensorResponse
+from app.schemas.sensor import SensorCreate, SensorBatchCreate, SensorEventRequest, SensorResponse
 
 router = APIRouter(prefix="/sensors", tags=["sensors"])
 
@@ -28,6 +29,52 @@ def create_sensor(
     db.commit()
     db.refresh(sensor)
     return sensor
+
+
+@router.post("/batch", response_model=list[SensorResponse], status_code=status.HTTP_201_CREATED)
+def create_sensors_batch(
+    batch_in: SensorBatchCreate,
+    db: Session = Depends(get_db),
+):
+    """
+    センサーを一括作成します。
+    既存の device_id から最大の番号を検出し、その続きの連番（例: SENSOR_UP_003, 004...）で自動作成します。
+    """
+    if batch_in.count <= 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="count must be a positive integer",
+        )
+
+    prefix = batch_in.prefix or "SENSOR_UP_"
+    existing_sensors = db.query(Sensor).filter(Sensor.device_id.like(f"{prefix}%")).all()
+
+    max_num = 0
+    pattern = re.compile(rf"^{re.escape(prefix)}(\d+)$")
+    for s in existing_sensors:
+        match = pattern.match(s.device_id)
+        if match:
+            num = int(match.group(1))
+            if num > max_num:
+                max_num = num
+
+    new_sensors = []
+    for i in range(1, batch_in.count + 1):
+        next_num = max_num + i
+        device_id = f"{prefix}{next_num:03d}"
+        sensor = Sensor(
+            device_id=device_id,
+            status=batch_in.status,
+            last_sens_at=datetime.now(),
+        )
+        new_sensors.append(sensor)
+
+    db.add_all(new_sensors)
+    db.commit()
+    for s in new_sensors:
+        db.refresh(s)
+
+    return new_sensors
 
 
 @router.get("/{sensor_id}", response_model=SensorResponse)
