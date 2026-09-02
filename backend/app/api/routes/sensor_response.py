@@ -7,7 +7,7 @@ router = APIRouter(prefix="/sensor-response", tags=["sensor-response"])
 @router.get("")
 def get_sensor_data():
 
-    SENSOR_API_URL = "http://192.168.120.173:3000/status"
+    SENSOR_API_URL = "http://192.168.120.205:3000/status"
     
     try:
         response = httpx.get(SENSOR_API_URL, timeout=5)

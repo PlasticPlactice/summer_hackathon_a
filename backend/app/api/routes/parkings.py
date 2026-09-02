@@ -40,6 +40,7 @@ def build_parking_status_response(parking: Parking, db: Session) -> ParkingStatu
         capacity=parking.capacity,
         compact_capacity=parking.compact_capacity,
         large_capacity=parking.large_capacity,
+        image_path=parking.image_path,
         available_spaces=available_count,
         occupied_spaces=occupied_count,
         spaces=space_responses,

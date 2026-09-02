@@ -22,3 +22,22 @@ export interface ParkingStatus extends Parking {
   occupied_spaces: number;
   spaces: ParkingSpace[];
 }
+
+// バックエンドのschemas/spaces.py ParkingSpacePreviewCreateと1:1で対応する型
+// POST /api/v1/parkings/preview のレスポンスに含まれ、そのままPOST /api/v1/parkingsへ渡す
+export interface ParkingSpacePreviewCreate {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  confidence: number;
+  type: "compact" | "large";
+}
+
+// バックエンドのschemas/parking.py ParkingPreviewResponseと1:1で対応する型
+export interface ParkingPreviewResponse {
+  image_width: number;
+  image_height: number;
+  image_path: string;
+  spaces: ParkingSpacePreviewCreate[];
+}

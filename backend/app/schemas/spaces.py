@@ -18,6 +18,7 @@ def normalize_space_type(value: str | None) -> str:
 
 
 class ParkingSpaceBase(BaseModel):
+    parking_number: int
     type: Literal["compact", "large"]
     status: int
     parking_id: int | None = None
