@@ -5,7 +5,8 @@ CREATE TABLE IF NOT EXISTS parkings (
     name VARCHAR NOT NULL,
     capacity INTEGER NOT NULL,
     compact_capacity INTEGER NOT NULL,
-    large_capacity INTEGER NOT NULL
+    large_capacity INTEGER NOT NULL,
+    image_path VARCHAR
 );
 
 CREATE TABLE IF NOT EXISTS sensors (
