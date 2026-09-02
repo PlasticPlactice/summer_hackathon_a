@@ -9,3 +9,7 @@ node_modules/
 
 # env
 .env
+
+# generated parking artifacts
+backend/parking_images/
+backend/temp_images/
