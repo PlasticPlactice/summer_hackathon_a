@@ -26,7 +26,7 @@ export default async function AdminParkListPage() {
 
   return (
     <main className="p-4 flex flex-col gap-4">
-      <ParkListClient parkings={parkings} />
+      <ParkListClient parkings={parkings} isAdmin />
     </main>
   );
 }
