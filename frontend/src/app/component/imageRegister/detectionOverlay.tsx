@@ -20,6 +20,7 @@ function DetectionOverlay({ imageUrl, imageWidth, imageHeight, spaces }: Detecti
         // 登録前で実際のidが無いため、表示用の仮スペース情報を組み立てる(status: 0 = 空車)
         const previewSlot: ParkingSpace = {
           id: index,
+          parking_number: index + 1,
           type: space.type,
           status: 0,
           parking_id: null,

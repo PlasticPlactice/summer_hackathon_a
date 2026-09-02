@@ -3,10 +3,19 @@
 
 export interface ParkingSpace {
   id: number;
+  parking_number: number;
   type: string; // "compact" | "large" 等、駐車スペースの種別
   status: number; // 0: 空車, 1: 満車
   parking_id: number | null;
   sensor_id: number | null;
+}
+
+// バックエンドのschemas/sensor.py SensorResponseと1:1で対応する型
+export interface Sensor {
+  id: number;
+  device_id: string;
+  status: number; // 0: 空車, 1: 満車
+  last_sens_at: string | null;
 }
 
 export interface Parking {
@@ -15,6 +24,7 @@ export interface Parking {
   capacity: number;
   compact_capacity: number;
   large_capacity: number;
+  image_path: string | null;
 }
 
 export interface ParkingStatus extends Parking {

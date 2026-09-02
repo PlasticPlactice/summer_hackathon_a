@@ -20,6 +20,12 @@ export default function AdminPage() {
         >
           画像の登録
         </Link>
+        <Link
+          href="/admin/sensors"
+          className="flex h-[53px] cursor-pointer items-center justify-center rounded-[5px] border border-[#0095ff] bg-[#cde9fb] text-base text-black transition-opacity hover:opacity-90"
+        >
+          センサー管理
+        </Link>
       </div>
     </main>
   );

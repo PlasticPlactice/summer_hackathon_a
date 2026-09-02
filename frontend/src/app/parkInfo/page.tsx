@@ -73,12 +73,12 @@ async function fetchParkingStatus(parkingId: number): Promise<ParkingStatus | nu
 }
 
 type ParkInfoPageProps = {
-  searchParams: Promise<{ parkingId?: string }>;
+  searchParams: Promise<{ parkingId?: string; from?: string }>;
 };
 
 export default async function ParkInfoPage({ searchParams }: ParkInfoPageProps) {
   // parkingId未指定・数値変換できない値の場合はDEFAULT_PARKING_IDにフォールバックする
-  const { parkingId: parkingIdParam } = await searchParams;
+  const { parkingId: parkingIdParam, from } = await searchParams;
   const parsedParkingId = Number(parkingIdParam);
   const parkingId =
     parkingIdParam && Number.isInteger(parsedParkingId) && parsedParkingId > 0
@@ -90,6 +90,9 @@ export default async function ParkInfoPage({ searchParams }: ParkInfoPageProps) 
 
   const status = await fetchParkingStatus(parkingId);
 
+  // 管理者一覧からの遷移(?from=admin)の場合は、戻るボタンを管理者一覧に戻す
+  const backHref = from === "admin" ? "/admin/parkList" : "/parkList";
+
   return (
     <main className="overflow-x-hidden">
       <ParkInfoClient
@@ -99,6 +102,7 @@ export default async function ParkInfoPage({ searchParams }: ParkInfoPageProps) 
         rowLayout={layoutConfig.rowLayout}
         flipped={layoutConfig.flipped}
         initialSpaces={status?.spaces ?? []}
+        backHref={backHref}
       />
     </main>
   );
