@@ -93,3 +93,25 @@ def test_delete_sensor(client: TestClient, test_db: Session):
     
     # 削除されたことを確認
     assert test_db.query(Sensor).filter(Sensor.id == sensor.id).first() is None
+
+
+def test_create_sensors_batch_auto_numbering(client: TestClient, test_db: Session):
+    """センサーの一括登録と連番自動作成のテスト"""
+    sensor1 = Sensor(device_id="SENSOR_UP_001", status=0)
+    sensor2 = Sensor(device_id="SENSOR_UP_002", status=0)
+    test_db.add_all([sensor1, sensor2])
+    test_db.commit()
+
+    batch_data = {
+        "count": 3,
+        "prefix": "SENSOR_UP_",
+        "status": 0
+    }
+    response = client.post("/api/v1/sensors/batch", json=batch_data)
+
+    assert response.status_code == 201
+    data = response.json()
+    assert len(data) == 3
+    assert data[0]["device_id"] == "SENSOR_UP_003"
+    assert data[1]["device_id"] == "SENSOR_UP_004"
+    assert data[2]["device_id"] == "SENSOR_UP_005"
