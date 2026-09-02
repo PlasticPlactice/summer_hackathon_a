@@ -5,7 +5,7 @@ from app.db.session import SessionLocal
 from app.models.sensor import Sensor
 from app.models.spaces import Parking_spaces
 
-SENSOR_API_URL = "http://192.168.120.173:3000/status"
+SENSOR_API_URL = "http://192.168.120.205:3000/status"
 CHECK_INTERVAL_SECONDS = 5
 TARGET_SENSOR_ID = 1
 TARGET_DEVICE_ID = "SENSOR_UP_001"
