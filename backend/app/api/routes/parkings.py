@@ -17,6 +17,7 @@ if str(backend_dir) not in sys.path:
 
 from app.db.session import get_db
 from app.models.parking import Parking
+from app.models.sensor import Sensor
 from app.models.spaces import Parking_spaces
 from app.schemas.parking import ParkingCreate, ParkingStatusResponse, ParkingRegisterRequest
 from app.schemas.spaces import ParkingSpaceResponse, ParkingPreviewResponse, normalize_space_type
@@ -185,6 +186,29 @@ async def create_parking(request: Request, db: Session = Depends(get_db)):
             detections = detect_parking_spaces(final_image_path)
             detected_spaces = convert_detections_to_spaces(detections, 1920, 1080)
 
+            # 未割り当ての空きセンサーを優先順位で割り当てる関数
+            def assign_available_sensors(spaces_list):
+                # 既にいずれかの駐車スペースに割り当てられている sensor_id を取得
+                used_sensor_ids = set(
+                    r[0] for r in db.query(Parking_spaces.sensor_id).filter(Parking_spaces.sensor_id.isnot(None)).all()
+                )
+                # まだ割り当てられていないセンサーを ID 順に取得
+                available_sensors = (
+                    db.query(Sensor)
+                    .filter(~Sensor.id.in_(used_sensor_ids) if used_sensor_ids else True)
+                    .order_by(Sensor.id.asc())
+                    .all()
+                )
+                sensor_idx = 0
+                for sp in spaces_list:
+                    if sensor_idx < len(available_sensors):
+                        s = available_sensors[sensor_idx]
+                        sp.sensor_id = s.id
+                        sp.status = s.status
+                        sensor_idx += 1
+                    else:
+                        sp.sensor_id = None
+
             space_models = []
             for idx, space in enumerate(detected_spaces, start=1):
                 normalized_type = normalize_space_type(space["type"])
@@ -201,6 +225,7 @@ async def create_parking(request: Request, db: Session = Depends(get_db)):
                     )
                 )
 
+            assign_available_sensors(space_models)
             db.add_all(space_models)
         elif provided_spaces:
             space_models = []
@@ -218,6 +243,26 @@ async def create_parking(request: Request, db: Session = Depends(get_db)):
                         height=float(space["height"]),
                     )
                 )
+
+            # 未割り当ての空きセンサーを優先順位で割り当てる関数（provided_spacesの場合）
+            used_sensor_ids = set(
+                r[0] for r in db.query(Parking_spaces.sensor_id).filter(Parking_spaces.sensor_id.isnot(None)).all()
+            )
+            available_sensors = (
+                db.query(Sensor)
+                .filter(~Sensor.id.in_(used_sensor_ids) if used_sensor_ids else True)
+                .order_by(Sensor.id.asc())
+                .all()
+            )
+            sensor_idx = 0
+            for sp in space_models:
+                if sp.sensor_id is None:
+                    if sensor_idx < len(available_sensors):
+                        s = available_sensors[sensor_idx]
+                        sp.sensor_id = s.id
+                        sp.status = s.status
+                        sensor_idx += 1
+
             db.add_all(space_models)
 
         db.commit()
