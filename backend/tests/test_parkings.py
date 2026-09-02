@@ -65,6 +65,77 @@ def test_get_parking_not_found(client: TestClient):
     assert response.status_code == 404
 
 
+def test_create_parking_with_uploaded_image_and_auto_detect_spaces(client: TestClient, test_db: Session, monkeypatch):
+    """画像を添付して登録し、YOLOで検出したスペースを自動登録できることを確認"""
+    monkeypatch.setattr(
+        "app.api.routes.parkings.detect_parking_spaces",
+        lambda image_path: [{"x1": 10, "y1": 20, "x2": 110, "y2": 90, "confidence": 0.91}],
+    )
+    monkeypatch.setattr(
+        "app.api.routes.parkings.convert_detections_to_spaces",
+        lambda detections, image_width, image_height: [{
+            "x": 10,
+            "y": 20,
+            "width": 100,
+            "height": 70,
+            "confidence": 0.91,
+            "type": "compact",
+        }],
+    )
+
+    from PIL import Image
+    from io import BytesIO
+    buffer = BytesIO()
+    Image.new("RGB", (200, 200), color="white").save(buffer, format="PNG")
+    buffer.seek(0)
+
+    response = client.post(
+        "/api/v1/parkings",
+        files={"file": ("parking.png", buffer.getvalue(), "image/png")},
+        data={
+            "name": "自動検出駐車場",
+            "capacity": 10,
+            "compact_capacity": 6,
+            "large_capacity": 4,
+        },
+    )
+
+    assert response.status_code == 201, response.text
+    data = response.json()
+    assert data["name"] == "自動検出駐車場"
+    assert len(data["spaces"]) == 1
+    assert data["spaces"][0]["type"] == "compact"
+
+
+def test_create_parking_rolls_back_when_space_detection_fails(client: TestClient, test_db: Session, monkeypatch):
+    """YOLO検出が失敗した場合は parkings と parking_spaces をともにロールバックする"""
+    monkeypatch.setattr(
+        "app.api.routes.parkings.detect_parking_spaces",
+        lambda image_path: (_ for _ in ()).throw(RuntimeError("YOLO error")),
+    )
+
+    from PIL import Image
+    from io import BytesIO
+    buffer = BytesIO()
+    Image.new("RGB", (200, 200), color="white").save(buffer, format="PNG")
+    buffer.seek(0)
+
+    response = client.post(
+        "/api/v1/parkings",
+        files={"file": ("parking.png", buffer.getvalue(), "image/png")},
+        data={
+            "name": "失敗駐車場",
+            "capacity": 10,
+            "compact_capacity": 6,
+            "large_capacity": 4,
+        },
+    )
+
+    assert response.status_code == 400
+    assert test_db.query(Parking).count() == 0
+    assert test_db.query(Parking_spaces).count() == 0
+
+
 def test_update_parking(client: TestClient, test_db: Session):
     """駐車場を更新できることを確認"""
     parking = Parking(name="テスト駐車場", capacity=50, compact_capacity=15, large_capacity=10)

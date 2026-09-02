@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, Request, status, File, UploadFile
 from sqlalchemy.orm import Session
 import io
+import os
 import sys
 from pathlib import Path
 
@@ -18,7 +19,7 @@ from app.db.session import get_db
 from app.models.parking import Parking
 from app.models.spaces import Parking_spaces
 from app.schemas.parking import ParkingCreate, ParkingStatusResponse, ParkingRegisterRequest
-from app.schemas.spaces import ParkingSpaceResponse, ParkingPreviewResponse
+from app.schemas.spaces import ParkingSpaceResponse, ParkingPreviewResponse, normalize_space_type
 from services.image_service import save_temp_image, save_parking_image, delete_temp_image
 from services.parking_detector import detect_parking_spaces, convert_detections_to_spaces
 
@@ -93,59 +94,145 @@ async def preview_parking_spaces(file: UploadFile = File(...)):
         )
 
 
+async def _parse_parking_payload(request: Request):
+    """JSON または multipart/form-data の両方を受け取れるようにする。"""
+    content_type = request.headers.get("content-type", "")
+
+    if "multipart/form-data" in content_type:
+        form = await request.form()
+        file_val = form.get("file")
+        image_path_val = form.get("image_path")
+        return {
+            "name": form.get("name"),
+            "capacity": form.get("capacity"),
+            "compact_capacity": form.get("compact_capacity"),
+            "large_capacity": form.get("large_capacity"),
+            "file": file_val,
+            "image_path": image_path_val if isinstance(image_path_val, str) else None,
+            "spaces": form.get("spaces"),
+        }
+
+    payload = await request.json()
+    return payload
+
+
 @router.post("", response_model=ParkingStatusResponse, status_code=status.HTTP_201_CREATED)
-def create_parking(
-    parking_in: ParkingRegisterRequest,
-    db: Session = Depends(get_db),
-):
+async def create_parking(request: Request, db: Session = Depends(get_db)):
     """
-    駐車場を新規登録します（画像 + 駐車スペース情報をまとめて登録）
-    
-    トランザクション処理：
-    - 駐車場作成失敗時はロールバック
-    - 画像保存失敗時はロールバック
-    - parking_spaces作成失敗時はロールバック
+    駐車場登録フロー:
+    1. リクエスト（画像ファイルまたは画像パス + 駐車場情報）を受け取る
+    2. parkings に登録して ID を取得
+    3. 画像を保存し YOLO で駐車スペースを自動検出
+    4. 検出された駐車スペースを parking_spaces に一元登録
+    5. コミットして結果を返却
     """
-    try:
-        # 駐車場を作成
-        parking = Parking(
-            name=parking_in.name,
-            capacity=parking_in.capacity,
-            compact_capacity=parking_in.compact_capacity,
-            large_capacity=parking_in.large_capacity,
-        )
-        db.add(parking)
-        db.flush()  # ID を取得するため flush
-        
-        # 一時画像を正式な保存場所に移動
-        final_image_path = save_parking_image(parking_in.image_path, parking.id)
-        parking.image_path = final_image_path
-        db.merge(parking)
-        db.flush()
-        
-        # 駐車スペースを登録
-        for space_data in parking_in.spaces:
-            space = Parking_spaces(
-                parking_id=parking.id,
-                type=space_data.type,
-                status=0,  # 初期状態は空車
-                x=space_data.x,
-                y=space_data.y,
-                width=space_data.width,
-                height=space_data.height,
-            )
-            db.add(space)
-        
-        db.commit()
-        db.refresh(parking)
-        
-        return build_parking_status_response(parking, db)
-    
-    except Exception as e:
-        db.rollback()
+    payload = await _parse_parking_payload(request)
+
+    if not isinstance(payload, dict):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Failed to create parking: {str(e)}",
+            detail="Invalid request payload format",
+        )
+
+    name = payload.get("name")
+    capacity = payload.get("capacity")
+    compact_capacity = payload.get("compact_capacity")
+    large_capacity = payload.get("large_capacity")
+    image_file = payload.get("file")
+    image_path = payload.get("image_path")
+    provided_spaces = payload.get("spaces") or []
+
+    if not name or capacity is None or compact_capacity is None or large_capacity is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="name, capacity, compact_capacity, large_capacity are required",
+        )
+
+    temp_image_path = None
+    final_image_path = None
+
+    try:
+        # 画像ファイル（UploadFile等）が直接送信された場合
+        if image_file is not None and hasattr(image_file, "read"):
+            file_content = await image_file.read()
+            filename = getattr(image_file, "filename", "parking.jpg") or "parking.jpg"
+            temp_image_path = save_temp_image(file_content, filename)
+            image_path = temp_image_path
+        elif isinstance(image_file, str) and image_file.strip():
+            # file項目にパス文字列が送られてきた場合
+            image_path = image_file.strip()
+
+        parking = Parking(
+            name=name,
+            capacity=int(capacity),
+            compact_capacity=int(compact_capacity),
+            large_capacity=int(large_capacity),
+        )
+        db.add(parking)
+        db.flush()
+
+        if image_path:
+            final_image_path = save_parking_image(image_path, parking.id)
+            parking.image_path = final_image_path
+            db.add(parking)
+            db.flush()
+
+            if temp_image_path and os.path.exists(temp_image_path) and temp_image_path != final_image_path:
+                delete_temp_image(temp_image_path)
+
+            # 画像から YOLO 検出で駐車スペースを全自動生成
+            detections = detect_parking_spaces(final_image_path)
+            detected_spaces = convert_detections_to_spaces(detections, 1920, 1080)
+
+            space_models = []
+            for idx, space in enumerate(detected_spaces, start=1):
+                normalized_type = normalize_space_type(space["type"])
+                space_models.append(
+                    Parking_spaces(
+                        parking_id=parking.id,
+                        parking_number=idx,
+                        type=normalized_type,
+                        status=0,
+                        x=float(space["x"]),
+                        y=float(space["y"]),
+                        width=float(space["width"]),
+                        height=float(space["height"]),
+                    )
+                )
+
+            db.add_all(space_models)
+        elif provided_spaces:
+            space_models = []
+            for idx, space in enumerate(provided_spaces, start=1):
+                normalized_type = normalize_space_type(space.get("type"))
+                space_models.append(
+                    Parking_spaces(
+                        parking_id=parking.id,
+                        parking_number=space.get("parking_number") or idx,
+                        type=normalized_type,
+                        status=0,
+                        x=float(space["x"]),
+                        y=float(space["y"]),
+                        width=float(space["width"]),
+                        height=float(space["height"]),
+                    )
+                )
+            db.add_all(space_models)
+
+        db.commit()
+        db.refresh(parking)
+
+        return build_parking_status_response(parking, db)
+
+    except Exception as exc:
+        db.rollback()
+        if final_image_path and os.path.exists(final_image_path):
+            os.remove(final_image_path)
+        if temp_image_path and os.path.exists(temp_image_path):
+            os.remove(temp_image_path)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Failed to create parking: {str(exc)}",
         )
 
 
