@@ -3,7 +3,11 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import ConfirmModal from "../confirmModal/confirmModal";
+import Pagination from "../pagination/pagination";
 import { ParkingStatus, Sensor } from "../../../types/parking";
+
+// 1ページに表示する件数
+const PAGE_SIZE = 10;
 
 type SensorListClientProps = {
   initialSensors: Sensor[];
@@ -48,6 +52,9 @@ export default function SensorListClient({ initialSensors, parkings }: SensorLis
   // 削除確認モーダルの対象(nullなら非表示)
   const [deleteTarget, setDeleteTarget] = useState<Sensor | null>(null);
 
+  // 現在のページ番号
+  const [currentPage, setCurrentPage] = useState(1);
+
   const locationMap = useMemo(() => buildLocationMap(parkings), [parkings]);
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL;
 
@@ -80,6 +87,7 @@ export default function SensorListClient({ initialSensors, parkings }: SensorLis
       }
       setNewDeviceId("");
       await refreshSensors();
+      setCurrentPage(1);
     } catch (error) {
       console.error("センサーの登録中にエラーが発生しました", error);
       setErrorMessage("センサーの登録中にエラーが発生しました。通信環境を確認して再度お試しください。");
@@ -146,6 +154,11 @@ export default function SensorListClient({ initialSensors, parkings }: SensorLis
     }
   };
 
+  const totalPages = Math.max(1, Math.ceil(sensors.length / PAGE_SIZE));
+  // 削除等でページ数が減った場合に範囲外にならないよう補正する
+  const safePage = Math.min(currentPage, totalPages);
+  const pagedSensors = sensors.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
   return (
     <div className="flex w-full max-w-[390px] flex-col gap-5">
       {/* 新規登録 */}
@@ -178,7 +191,7 @@ export default function SensorListClient({ initialSensors, parkings }: SensorLis
         {sensors.length === 0 ? (
           <p className="text-xs text-gray-500">登録されているセンサーがありません</p>
         ) : (
-          sensors.map((sensor) => {
+          pagedSensors.map((sensor) => {
             const location = locationMap.get(sensor.id);
             const isEditing = editingId === sensor.id;
             return (
@@ -269,6 +282,7 @@ export default function SensorListClient({ initialSensors, parkings }: SensorLis
             );
           })
         )}
+        <Pagination currentPage={safePage} totalPages={totalPages} onPageChange={setCurrentPage} />
       </section>
 
       <ConfirmModal

@@ -1,7 +1,47 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export default function AdminPage() {
+  // ユーザーネームとパスワードの入力値を管理するstate
+  const router = useRouter();
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // ログインボタン押下時: バックエンドのPOST /auth/loginを呼び出す
+  const handleLogin = async () => {
+    setIsSubmitting(true);
+    setError(false);
+
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL;
+
+    try {
+      const res = await fetch(`${apiBaseUrl}/api/v1/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ username, password }),
+      });
+
+      if (!res.ok) {
+        setError(true);
+        return;
+      }
+
+      router.push("/admin/home");
+    } catch (err) {
+      console.error(`ログインに失敗しました: ${err}`);
+      setError(true);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <main className="flex min-h-screen w-full flex-col items-center bg-white pt-16">
       <div className="flex flex-col items-center flex-1 justify-start gap-10">
@@ -13,32 +53,43 @@ export default function AdminPage() {
           </p>
           <Image src="/car_header.png" alt="App Icon" className="w-full h-full object-contain p-1" width={70} height={28} />
         </div>
-      
+
         {/* アプリ名 */}
         <p className="text-5xl text-sky-400 font-bold">ParkNow</p>
         {/* エラーメッセージ */}
-        <p className="text-xs text-red-500 hidden">パスワードもしくはユーザーネームが正しくありません </p>
+        <p className={`text-xs text-red-500 ${error ? "" : "hidden"}`}>パスワードもしくはユーザーネームが正しくありません </p>
         {/* ログインフォーム */}
-        <div className="flex flex-col items-center gap-2 shadow-md p-3 w-80">
+        <form
+          className="flex flex-col items-center gap-2 shadow-md p-3 w-80"
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleLogin();
+          }}
+        >
           {/* ユーザーネーム */}
           <input
             type="text"
             placeholder="ユーザーネーム"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
             className="w-full rounded-[5px] border border-[#a1a1a1] px-2 py-1 text-xs text-black placeholder:text-[#a1a1a1]"
           />
           {/* パスワード */}
           <input
             type="password"
             placeholder="パスワード"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             className="w-full rounded-[5px] border border-[#a1a1a1] px-2 py-1 text-xs text-black placeholder:text-[#a1a1a1]"
           />
-          <Link
-            href="/admin/home"
+          <button
+            type="submit"
+            disabled={isSubmitting}
             className="flex items-center justify-center mt-2 h-[35px] w-full cursor-pointer self-center rounded-[5px] border border-[#0095FF] bg-[#C3E6FF] text-xs font-bold text-black transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
           >
             ログイン
-          </Link>
-        </div>
+          </button>
+        </form>
         <div className="flex gap-4">
           <h3 className="text-xs font-bold">アカウントをお持ちでない場合</h3>
           <Link
