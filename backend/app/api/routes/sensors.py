@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
+from app.core.auth import require_admin
 from app.models.sensor import Sensor
 from app.models.spaces import Parking_spaces
 from app.schemas.sensor import SensorCreate, SensorBatchCreate, SensorEventRequest, SensorResponse
@@ -11,14 +12,19 @@ from app.schemas.sensor import SensorCreate, SensorBatchCreate, SensorEventReque
 router = APIRouter(prefix="/sensors", tags=["sensors"])
 
 
-@router.get("", response_model=list[SensorResponse])
+@router.get("", response_model=list[SensorResponse], dependencies=[Depends(require_admin)])
 def get_sensors(db: Session = Depends(get_db)):
     """センサーの一覧を取得します"""
     sensors = db.query(Sensor).all()
     return sensors
 
 
-@router.post("", response_model=SensorResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=SensorResponse,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_admin)],
+)
 def create_sensor(
     sensor_in: SensorCreate,
     db: Session = Depends(get_db),
@@ -31,7 +37,12 @@ def create_sensor(
     return sensor
 
 
-@router.post("/batch", response_model=list[SensorResponse], status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/batch",
+    response_model=list[SensorResponse],
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_admin)],
+)
 def create_sensors_batch(
     batch_in: SensorBatchCreate,
     db: Session = Depends(get_db),
@@ -77,7 +88,11 @@ def create_sensors_batch(
     return new_sensors
 
 
-@router.get("/{sensor_id}", response_model=SensorResponse)
+@router.get(
+    "/{sensor_id}",
+    response_model=SensorResponse,
+    dependencies=[Depends(require_admin)],
+)
 def get_sensor(sensor_id: int, db: Session = Depends(get_db)):
     """ID指定でセンサーを取得します"""
     sensor = db.query(Sensor).filter(Sensor.id == sensor_id).first()
@@ -89,7 +104,11 @@ def get_sensor(sensor_id: int, db: Session = Depends(get_db)):
     return sensor
 
 
-@router.put("/{sensor_id}", response_model=SensorResponse)
+@router.put(
+    "/{sensor_id}",
+    response_model=SensorResponse,
+    dependencies=[Depends(require_admin)],
+)
 def update_sensor(
     sensor_id: int,
     sensor_in: SensorCreate,
@@ -109,7 +128,11 @@ def update_sensor(
     return sensor
 
 
-@router.delete("/{sensor_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{sensor_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(require_admin)],
+)
 def delete_sensor(sensor_id: int, db: Session = Depends(get_db)):
     """センサーを削除します"""
     sensor = db.query(Sensor).filter(Sensor.id == sensor_id).first()
