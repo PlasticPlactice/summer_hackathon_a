@@ -22,21 +22,21 @@ SELECT
   NOW()
 FROM generate_series(102, 206) AS i;
 
--- 駐車スペース初期データ (上り PA: 101区画（大型:22, 小型:79）)
+-- 駐車スペース初期データ (上り PA: 101区画（小型:79, 大型:22）)
 INSERT INTO parking_spaces (parking_number, type, status, parking_id, sensor_id)
 SELECT
   i,
-  CASE WHEN i <= 22 THEN 'large' ELSE 'compact' END,
+  CASE WHEN i <= 79 THEN 'compact' ELSE 'large' END,
   (i % 2),
   1,
   i
 FROM generate_series(1, 101) AS i;
 
--- 駐車スペース初期データ (下り PA: 105区画（大型:26, 小型:79）)
+-- 駐車スペース初期データ (下り PA: 105区画（小型:79, 大型:26）)
 INSERT INTO parking_spaces (parking_number, type, status, parking_id, sensor_id)
 SELECT
   (i - 101),
-  CASE WHEN (i - 101) <= 26 THEN 'large' ELSE 'compact' END,
+  CASE WHEN (i - 101) <= 79 THEN 'compact' ELSE 'large' END,
   ((i + 1) % 2),
   2,
   i
