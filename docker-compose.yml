@@ -28,6 +28,14 @@ services:
       SENSOR_API_URL: ${SENSOR_API_URL:-http://192.168.120.238:3000/status}
       TARGET_SENSOR_ID: ${TARGET_SENSOR_ID:-1}
       TARGET_DEVICE_ID: ${TARGET_DEVICE_ID:-SENSOR_UP_001}
+      # 以下は開発用の既定値。本番環境では必ず安全な値へ変更する
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH:-pbkdf2_sha256:600000:park-now-dev:496edc52ada195ac4ece176a317d5a651d872e96c0ab3161bbf5508ec5aa5111}
+      AUTH_SECRET: ${AUTH_SECRET:-change-this-secret-in-production}
+      AUTH_SESSION_TTL_SECONDS: ${AUTH_SESSION_TTL_SECONDS:-28800}
+      AUTH_COOKIE_SECURE: ${AUTH_COOKIE_SECURE:-false}
+      # フロントエンドの認証対応後に true へ変更する
+      AUTHORIZATION_ENABLED: ${AUTHORIZATION_ENABLED:-false}
     volumes:
       - ./backend:/app
     depends_on:

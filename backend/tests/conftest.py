@@ -49,5 +49,17 @@ def test_db():
 
 @pytest.fixture(scope="function")
 def client(test_db):
-    """テストクライアントを作成"""
+    """管理者としてログイン済みのテストクライアントを作成"""
+    test_client = TestClient(fastapi_app)
+    response = test_client.post(
+        "/api/v1/auth/login",
+        json={"username": "admin", "password": "admin"},
+    )
+    assert response.status_code == 200
+    return test_client
+
+
+@pytest.fixture(scope="function")
+def unauthenticated_client(test_db):
+    """未認証状態のテストクライアントを作成"""
     return TestClient(fastapi_app)
