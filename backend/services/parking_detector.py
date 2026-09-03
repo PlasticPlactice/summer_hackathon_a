@@ -1,3 +1,4 @@
+import statistics
 from pathlib import Path
 
 try:
@@ -46,18 +47,23 @@ def detect_parking_spaces(image_path):
     return detections
 
 
-def determine_space_type(width: int, height: int, min_box_area: float, min_box_width: float, min_box_height: float) -> str:
-    """検出された最小枠を基準にしたサイズ比で compact / large を判定する。"""
-    if min_box_area <= 0:
+def determine_space_type(width: int, height: int, median_box_area: float) -> str:
+    """検出された枠の中央値を基準にした面積比で compact / large を判定する。
+    最小値を基準にすると、誤検出などで極端に小さい枠が1つ混ざるだけで
+    他の枠が軒並みlarge判定になってしまうため、外れ値に強い中央値を基準にする。
+    幅・高さを個別に閾値判定すると、撮影アングルの都合で列ごとに枠の縦横比が
+    変わる場合（例: 端の列だけ横長に写る等）に、実際の大きさは同じでも
+    向きの違いだけで large と誤判定されてしまうため、向きに影響されない
+    面積比のみで判定する。
+    """
+    if median_box_area <= 0:
         return "compact"
 
     area = width * height
-    area_ratio = area / min_box_area
-    width_ratio = width / min_box_width if min_box_width > 0 else 1.0
-    height_ratio = height / min_box_height if min_box_height > 0 else 1.0
+    area_ratio = area / median_box_area
 
-    # 最小検出枠の 2 倍以上なら large とみなす
-    if area_ratio >= 2.0 or max(width_ratio, height_ratio) >= 1.6:
+    # 中央値サイズの 2 倍以上なら large とみなす
+    if area_ratio >= 2.0:
         return "large"
     return "compact"
 
@@ -86,8 +92,7 @@ def convert_detections_to_spaces(detections: list, image_width: int, image_heigh
         height = int(y2 - y1)
         box_sizes.append((width, height))
 
-    min_box = min((w * h, w, h) for w, h in box_sizes) if box_sizes else (0, 0, 0)
-    min_box_area, min_box_width, min_box_height = min_box
+    median_box_area = statistics.median(w * h for w, h in box_sizes) if box_sizes else 0
 
     for detection in detections:
         x1 = detection["x1"]
@@ -98,7 +103,7 @@ def convert_detections_to_spaces(detections: list, image_width: int, image_heigh
 
         width = int(x2 - x1)
         height = int(y2 - y1)
-        space_type = determine_space_type(width, height, min_box_area, min_box_width, min_box_height)
+        space_type = determine_space_type(width, height, median_box_area)
 
         space = {
             "x": int(x1),

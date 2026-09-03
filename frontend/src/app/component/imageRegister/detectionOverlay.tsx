@@ -25,6 +25,10 @@ function DetectionOverlay({ imageUrl, imageWidth, imageHeight, spaces }: Detecti
           status: 0,
           parking_id: null,
           sensor_id: null,
+          x: space.x,
+          y: space.y,
+          width: space.width,
+          height: space.height,
         };
         const style = {
           left: `${(space.x / imageWidth) * 100}%`,

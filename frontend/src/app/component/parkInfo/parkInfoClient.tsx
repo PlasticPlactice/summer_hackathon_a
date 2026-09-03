@@ -2,8 +2,11 @@
 import { useEffect, useMemo, useState } from "react";
 import ParkInfo from "./parkInfo";
 import ParkMap from "./parkMap/parkMap";
+import ParkPhotoMap from "./parkMap/parkPhotoMap";
 import { buildParkingRows, RowLayout } from "./parkMap/buildParkingRows";
 import { calcVehicleCounts } from "./parkMap/calcVehicleCounts";
+import { calcVehicleCountsFromSpaces } from "./parkMap/calcVehicleCountsFromSpaces";
+import { buildImageUrl } from "./parkMap/buildImageUrl";
 import { FacilityKey } from "./facilityIcons";
 import { ParkingSpace, ParkingStatus } from "../../../types/parking";
 
@@ -14,8 +17,11 @@ type ParkInfoClientProps = {
   parkingId: number;
   saName: string;
   facilities: Record<FacilityKey, boolean>;
-  rowLayout: RowLayout[];
+  // 前沢PA上り/下り以外はレイアウト定義を持たない(undefined)。その場合は写真+検出データ表示に切り替える
+  rowLayout?: RowLayout[];
   flipped: boolean;
+  // 写真表示用のDB登録画像パス。前沢PA上り/下りや未登録時はnull
+  imagePath: string | null;
   initialSpaces: ParkingSpace[];
   // 戻るボタンの遷移先。省略時は一般利用者向け一覧に戻る
   backHref?: string;
@@ -46,6 +52,7 @@ export default function ParkInfoClient({
   facilities,
   rowLayout,
   flipped,
+  imagePath,
   initialSpaces,
   backHref,
 }: ParkInfoClientProps) {
@@ -64,14 +71,30 @@ export default function ParkInfoClient({
     return () => clearInterval(timerId);
   }, [parkingId]);
 
-  const parkingRows = useMemo(() => buildParkingRows(spaces, rowLayout), [spaces, rowLayout]);
-  const { capacity, available } = useMemo(() => calcVehicleCounts(parkingRows), [parkingRows]);
+  // 前沢PA上り/下り(rowLayoutあり)は模式図、それ以外は写真+検出データで表示する
+  const isSchematic = rowLayout !== undefined;
+
+  const parkingRows = useMemo(
+    () => (isSchematic ? buildParkingRows(spaces, rowLayout) : []),
+    [isSchematic, spaces, rowLayout]
+  );
+  const schematicCounts = useMemo(() => calcVehicleCounts(parkingRows), [parkingRows]);
+  const photoCounts = useMemo(() => calcVehicleCountsFromSpaces(spaces), [spaces]);
+  const { capacity, available } = isSchematic ? schematicCounts : photoCounts;
+
+  const imageUrl = useMemo(() => buildImageUrl(imagePath), [imagePath]);
 
   return (
     <>
       <ParkInfo saName={saName} capacity={capacity} available={available} facilities={facilities} backHref={backHref} />
-      {/* 下りは実際の走行方向に合わせてマップを上下左右反転(180度回転)して表示する */}
-      <ParkMap rows={parkingRows} flipped={flipped} />
+      {isSchematic ? (
+        // 下りは実際の走行方向に合わせてマップを上下左右反転(180度回転)して表示する
+        <ParkMap rows={parkingRows} flipped={flipped} />
+      ) : imageUrl ? (
+        <ParkPhotoMap imageUrl={imageUrl} spaces={spaces} />
+      ) : (
+        <p className="px-4 py-6 text-center text-xs text-gray-500">駐車場の写真が登録されていません。</p>
+      )}
     </>
   );
 }

@@ -85,8 +85,9 @@ export default async function ParkInfoPage({ searchParams }: ParkInfoPageProps) 
       ? parsedParkingId
       : DEFAULT_PARKING_ID;
 
-  // レイアウト設定が無いid(未登録の駐車場)の場合もDEFAULT_PARKING_IDの設定で表示する
-  const layoutConfig = PARKING_LAYOUT_CONFIG[parkingId] ?? PARKING_LAYOUT_CONFIG[DEFAULT_PARKING_ID];
+  // 前沢PA上り/下り(id1, id2)のみレイアウト設定を持つ。それ以外は未定義のままとし、
+  // ParkInfoClient側で「写真+検出データ表示」に切り替える
+  const layoutConfig = PARKING_LAYOUT_CONFIG[parkingId];
 
   const status = await fetchParkingStatus(parkingId);
 
@@ -99,8 +100,9 @@ export default async function ParkInfoPage({ searchParams }: ParkInfoPageProps) 
         parkingId={parkingId}
         saName={status?.name ?? "駐車場"}
         facilities={facilities}
-        rowLayout={layoutConfig.rowLayout}
-        flipped={layoutConfig.flipped}
+        rowLayout={layoutConfig?.rowLayout}
+        flipped={layoutConfig?.flipped ?? false}
+        imagePath={status?.image_path ?? null}
         initialSpaces={status?.spaces ?? []}
         backHref={backHref}
       />

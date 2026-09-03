@@ -8,6 +8,11 @@ export interface ParkingSpace {
   status: number; // 0: 空車, 1: 満車
   parking_id: number | null;
   sensor_id: number | null;
+  // YOLOによる検出結果の座標(元画像のピクセル単位)。前沢PA等の模式図表示のみのデータには無い
+  x: number | null;
+  y: number | null;
+  width: number | null;
+  height: number | null;
 }
 
 // バックエンドのschemas/sensor.py SensorResponseと1:1で対応する型
