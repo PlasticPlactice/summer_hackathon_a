@@ -4,7 +4,11 @@ import { useRouter } from "next/navigation";
 import ExplanatoryNotes from "../explanatoryNotes";
 import AreaListItem from "../areaListItem/areaListItem";
 import ConfirmModal from "../confirmModal/confirmModal";
+import Pagination from "../pagination/pagination";
 import { ParkingStatus } from "../../../types/parking";
+
+// 1ページに表示する件数
+const PAGE_SIZE = 10;
 
 type AreaType = "SA" | "PA" | "other";
 
@@ -32,6 +36,9 @@ export default function ParkListClient({ parkings, isAdmin = false }: ParkListCl
   const [keyword, setKeyword] = useState("");
   const [sortOrder, setSortOrder] = useState<SortOrder>("none");
 
+  // 現在のページ番号
+  const [currentPage, setCurrentPage] = useState(1);
+
   // 削除確認モーダルの対象(nullなら非表示)
   const [deleteTarget, setDeleteTarget] = useState<ParkingStatus | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -40,6 +47,7 @@ export default function ParkListClient({ parkings, isAdmin = false }: ParkListCl
   // 検索実行時
   const handleSearch = () => {
     setKeyword(areaName);
+    setCurrentPage(1);
   };
 
   // 削除確定時: バックエンドのDELETE /api/v1/parkings/{id}を呼び出す
@@ -90,6 +98,11 @@ export default function ParkListClient({ parkings, isAdmin = false }: ParkListCl
     return sortOrder === "asc" ? compared : -compared;
   });
 
+  const totalPages = Math.max(1, Math.ceil(sortedData.length / PAGE_SIZE));
+  // 削除等でページ数が減った場合に範囲外にならないよう補正する
+  const safePage = Math.min(currentPage, totalPages);
+  const pagedData = sortedData.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
   return (
     <>
       {/* 検索 */}
@@ -100,7 +113,10 @@ export default function ParkListClient({ parkings, isAdmin = false }: ParkListCl
           <select
             className="type-select text-xs border rounded-sm p-1 border-gray-300 w-24"
             value={areaType}
-            onChange={(e) => setAreaType(e.target.value)}
+            onChange={(e) => {
+              setAreaType(e.target.value);
+              setCurrentPage(1);
+            }}
           >
             <option value="none">指定なし</option>
             <option value="SA">SA</option>
@@ -135,7 +151,10 @@ export default function ParkListClient({ parkings, isAdmin = false }: ParkListCl
           <select
             className="sort-select text-xs border rounded-sm p-1 border-gray-300 w-32"
             value={sortOrder}
-            onChange={(e) => setSortOrder(e.target.value as SortOrder)}
+            onChange={(e) => {
+              setSortOrder(e.target.value as SortOrder);
+              setCurrentPage(1);
+            }}
           >
             <option value="none">指定なし</option>
             <option value="asc">名前順(昇順)</option>
@@ -151,8 +170,8 @@ export default function ParkListClient({ parkings, isAdmin = false }: ParkListCl
       </div>
       {/* エリア一覧 */}
       <div className="area-list flex flex-col justify-between gap-5">
-      {sortedData.length > 0 ? (
-          sortedData.map((item) => (
+      {pagedData.length > 0 ? (
+          pagedData.map((item) => (
             <AreaListItem
               key={item.id}
               parking={item}
@@ -166,6 +185,7 @@ export default function ParkListClient({ parkings, isAdmin = false }: ParkListCl
           <p className="text-xs text-gray-500">該当するエリアがありません</p>
         )}
       </div>
+      <Pagination currentPage={safePage} totalPages={totalPages} onPageChange={setCurrentPage} />
       <ConfirmModal
         isOpen={deleteTarget !== null}
         title="駐車場の削除"
