@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
+from app.core.auth import require_admin
 from app.models.sensor import Sensor
 from app.models.spaces import Parking_spaces
 from app.schemas.spaces import (
@@ -11,7 +12,11 @@ from app.schemas.spaces import (
     ParkingSpaceStatusUpdate,
 )
 
-router = APIRouter(prefix="/spaces", tags=["spaces"])
+router = APIRouter(
+    prefix="/spaces",
+    tags=["spaces"],
+    dependencies=[Depends(require_admin)],
+)
 
 
 @router.post("", response_model=ParkingSpaceResponse, status_code=status.HTTP_201_CREATED)
@@ -127,5 +132,4 @@ def update_space_status(
     db.commit()
     db.refresh(space)
     return space
-
 

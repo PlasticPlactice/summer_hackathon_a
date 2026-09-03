@@ -16,6 +16,7 @@ if str(backend_dir) not in sys.path:
     sys.path.insert(0, str(backend_dir))
 
 from app.db.session import get_db
+from app.core.auth import require_admin
 from app.models.parking import Parking
 from app.models.sensor import Sensor
 from app.models.spaces import Parking_spaces
@@ -48,7 +49,12 @@ def build_parking_status_response(parking: Parking, db: Session) -> ParkingStatu
     )
 
 
-@router.post("/preview", response_model=ParkingPreviewResponse, status_code=status.HTTP_200_OK)
+@router.post(
+    "/preview",
+    response_model=ParkingPreviewResponse,
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(require_admin)],
+)
 async def preview_parking_spaces(file: UploadFile = File(...)):
     """
     駐車場画像をアップロードし、YOLO検出結果をプレビュー
@@ -118,7 +124,12 @@ async def _parse_parking_payload(request: Request):
     return payload
 
 
-@router.post("", response_model=ParkingStatusResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=ParkingStatusResponse,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_admin)],
+)
 async def create_parking(request: Request, db: Session = Depends(get_db)):
     """
     駐車場登録フロー:
@@ -303,7 +314,11 @@ def get_parking_status(parking_id: int, db: Session = Depends(get_db)):
     return build_parking_status_response(parking, db)
 
 
-@router.put("/{parking_id}", response_model=ParkingStatusResponse)
+@router.put(
+    "/{parking_id}",
+    response_model=ParkingStatusResponse,
+    dependencies=[Depends(require_admin)],
+)
 def update_parking(
     parking_id: int,
     parking_in: ParkingCreate,
@@ -323,7 +338,11 @@ def update_parking(
     return build_parking_status_response(parking, db)
 
 
-@router.delete("/{parking_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{parking_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(require_admin)],
+)
 def delete_parking(parking_id: int, db: Session = Depends(get_db)):
     """駐車場を削除します"""
     parking = db.query(Parking).filter(Parking.id == parking_id).first()
@@ -335,4 +354,3 @@ def delete_parking(parking_id: int, db: Session = Depends(get_db)):
     db.delete(parking)
     db.commit()
     return None
-
