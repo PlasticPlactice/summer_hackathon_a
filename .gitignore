@@ -13,3 +13,6 @@ node_modules/
 # generated parking artifacts
 backend/parking_images/
 backend/temp_images/
+
+# 発表用のローカル資料
+PRESENTATION_TECH_STACK.md
