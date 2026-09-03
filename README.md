@@ -17,7 +17,7 @@ docker-compose up
 現在のバックグラウンド監視はセンサー1台を対象とします。接続先や対象を変更する場合は、
 コンテナ起動前に以下の環境変数を設定してください。未設定時は括弧内の値を使用します。
 
-- `SENSOR_API_URL`（`http://192.168.120.238:3000/status`）
+- `SENSOR_API_URL`（`提供されるセンサーのURL`）
 - `TARGET_SENSOR_ID`（`1`）
 - `TARGET_DEVICE_ID`（`SENSOR_UP_001`）
 
