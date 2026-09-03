@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
+from app.core.auth import require_admin
 from app.models.sensor import Sensor
 from app.models.spaces import Parking_spaces
 from app.schemas.spaces import (
@@ -11,7 +12,11 @@ from app.schemas.spaces import (
     ParkingSpaceStatusUpdate,
 )
 
-router = APIRouter(prefix="/spaces", tags=["spaces"])
+router = APIRouter(
+    prefix="/spaces",
+    tags=["spaces"],
+    dependencies=[Depends(require_admin)],
+)
 
 
 @router.post("", response_model=ParkingSpaceResponse, status_code=status.HTTP_201_CREATED)
@@ -19,8 +24,23 @@ def create_parking_space(
     space_in: ParkingSpaceCreate,
     db: Session = Depends(get_db),
 ):
-    """駐車スペースを新規登録します"""
-    space = Parking_spaces(**space_in.model_dump())
+    """駐車スペースを新規登録します（センサー未指定の場合、空きセンサーを自動割り当て）"""
+    space_data = space_in.model_dump()
+    if space_data.get("sensor_id") is None:
+        used_sensor_ids = set(
+            r[0] for r in db.query(Parking_spaces.sensor_id).filter(Parking_spaces.sensor_id.isnot(None)).all()
+        )
+        available_sensor = (
+            db.query(Sensor)
+            .filter(~Sensor.id.in_(used_sensor_ids) if used_sensor_ids else True)
+            .order_by(Sensor.id.asc())
+            .first()
+        )
+        if available_sensor:
+            space_data["sensor_id"] = available_sensor.id
+            space_data["status"] = available_sensor.status
+
+    space = Parking_spaces(**space_data)
     db.add(space)
     db.commit()
     db.refresh(space)
@@ -112,5 +132,4 @@ def update_space_status(
     db.commit()
     db.refresh(space)
     return space
-
 

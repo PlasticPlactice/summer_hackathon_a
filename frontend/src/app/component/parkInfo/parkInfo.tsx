@@ -14,13 +14,15 @@ type ParkInfoProps = {
   capacity: VehicleCount;
   available: VehicleCount;
   facilities: Record<FacilityKey, boolean>;
+  // 戻るボタンの遷移先。省略時は一般利用者向け一覧に戻る
+  backHref?: string;
 };
 
-function ParkInfo({ saName, capacity, available, facilities }: ParkInfoProps) {
+function ParkInfo({ saName, capacity, available, facilities, backHref = "/parkList" }: ParkInfoProps) {
   return (
     <div className="parkInfo flex flex-col">
       {/* 戻るボタン */}
-      <Link href="/parkList" className="flex items-center gap-2 px-4 py-3 text-black">
+      <Link href={backHref} className="flex items-center gap-2 px-4 py-3 text-black">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M19 12H5M12 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
         </svg>

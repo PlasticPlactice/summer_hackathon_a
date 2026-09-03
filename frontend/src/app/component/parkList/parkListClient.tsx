@@ -1,7 +1,9 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import ExplanatoryNotes from "../explanatoryNotes";
 import AreaListItem from "../areaListItem/areaListItem";
+import ConfirmModal from "../confirmModal/confirmModal";
 import { ParkingStatus } from "../../../types/parking";
 
 type AreaType = "SA" | "PA" | "other";
@@ -18,18 +20,56 @@ type SortOrder = "none" | "asc" | "desc";
 
 type ParkListClientProps = {
   parkings: ParkingStatus[];
+  // 管理者向け操作(編集・削除ボタン)を表示するかどうか。省略時は一般利用者向け画面のまま
+  isAdmin?: boolean;
 };
 
-export default function ParkListClient({ parkings }: ParkListClientProps) {
+export default function ParkListClient({ parkings, isAdmin = false }: ParkListClientProps) {
+  const router = useRouter();
   // 検索条件用のstate
   const [areaType, setAreaType] = useState("none");
   const [areaName, setAreaName] = useState("");
   const [keyword, setKeyword] = useState("");
   const [sortOrder, setSortOrder] = useState<SortOrder>("none");
 
+  // 削除確認モーダルの対象(nullなら非表示)
+  const [deleteTarget, setDeleteTarget] = useState<ParkingStatus | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
   // 検索実行時
   const handleSearch = () => {
     setKeyword(areaName);
+  };
+
+  // 削除確定時: バックエンドのDELETE /api/v1/parkings/{id}を呼び出す
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) {
+      return;
+    }
+    setIsDeleting(true);
+    setDeleteError(null);
+
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL;
+
+    try {
+      const res = await fetch(`${apiBaseUrl}/api/v1/parkings/${deleteTarget.id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        console.error(`駐車場の削除に失敗しました: ${res.status}`);
+        setDeleteError("削除に失敗しました。再度お試しください。");
+        setIsDeleting(false);
+        return;
+      }
+      setDeleteTarget(null);
+      setIsDeleting(false);
+      router.refresh();
+    } catch (error) {
+      console.error("駐車場の削除中にエラーが発生しました", error);
+      setDeleteError("削除中にエラーが発生しました。通信環境を確認して再度お試しください。");
+      setIsDeleting(false);
+    }
   };
 
   // 表示データをフィルタリング
@@ -118,12 +158,26 @@ export default function ParkListClient({ parkings }: ParkListClientProps) {
               parking={item}
               parkingTotalNumLarge={item.large_capacity}
               parkingTotalNumsmall={item.compact_capacity}
+              isAdmin={isAdmin}
+              onDeleteRequest={setDeleteTarget}
             />
           ))
         ) : (
           <p className="text-xs text-gray-500">該当するエリアがありません</p>
         )}
       </div>
+      <ConfirmModal
+        isOpen={deleteTarget !== null}
+        title="駐車場の削除"
+        message={deleteTarget ? `「${deleteTarget.name}」を削除します。この操作は取り消せません。よろしいですか?` : ""}
+        isProcessing={isDeleting}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => {
+          setDeleteTarget(null);
+          setDeleteError(null);
+        }}
+      />
+      {deleteError && <p className="text-xs text-red-500">{deleteError}</p>}
     </>
   );
 }

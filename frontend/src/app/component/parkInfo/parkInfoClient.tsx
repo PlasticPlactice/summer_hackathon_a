@@ -17,6 +17,8 @@ type ParkInfoClientProps = {
   rowLayout: RowLayout[];
   flipped: boolean;
   initialSpaces: ParkingSpace[];
+  // 戻るボタンの遷移先。省略時は一般利用者向け一覧に戻る
+  backHref?: string;
 };
 
 // 指定した駐車場の現在状況を取得する。取得に失敗した場合はnullを返す
@@ -45,6 +47,7 @@ export default function ParkInfoClient({
   rowLayout,
   flipped,
   initialSpaces,
+  backHref,
 }: ParkInfoClientProps) {
   const [spaces, setSpaces] = useState(initialSpaces);
 
@@ -66,7 +69,7 @@ export default function ParkInfoClient({
 
   return (
     <>
-      <ParkInfo saName={saName} capacity={capacity} available={available} facilities={facilities} />
+      <ParkInfo saName={saName} capacity={capacity} available={available} facilities={facilities} backHref={backHref} />
       {/* 下りは実際の走行方向に合わせてマップを上下左右反転(180度回転)して表示する */}
       <ParkMap rows={parkingRows} flipped={flipped} />
     </>

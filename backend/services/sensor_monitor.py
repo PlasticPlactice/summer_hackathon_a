@@ -1,81 +1,99 @@
 from datetime import datetime
 import asyncio
+from collections import deque
 import httpx
+from app.core.config import settings
 from app.db.session import SessionLocal
 from app.models.sensor import Sensor
 from app.models.spaces import Parking_spaces
 
-SENSOR_API_URL = "http://192.168.120.173:3000/status"
-CHECK_INTERVAL_SECONDS = 5
-TARGET_SENSOR_ID = 1
-TARGET_DEVICE_ID = "SENSOR_UP_001"
+CHECK_INTERVAL_SECONDS = 1  # 1秒おきにデータ取得
+WINDOW_SIZE = 10  # 10秒（10サンプル）のウィンドウ
+OCCUPIED_THRESHOLD = 3  # 10回のうち3回以上検知されたら駐車状態と判定
 
 
 async def start_sensor_monitor():
-    """10秒ごとにセンサーの状態をチェックし、変更があればDBのsensorおよび紐づくparking_spacesを更新するバックグラウンドタスク"""
-    async with httpx.AsyncClient(timeout=5.0) as client:
+    """
+    実証用の対象センサー1台について、1秒ごとに状態をチェックし、10秒間（10回）の履歴から
+    人や動物などの一時的な通過（1〜3秒）による誤検知を除外してステータス更新を行うバックグラウンドタスク
+
+    接続先と対象センサーは SENSOR_API_URL、TARGET_SENSOR_ID、TARGET_DEVICE_ID
+    の各環境変数で変更できる。
+    """
+    history = deque(maxlen=WINDOW_SIZE)
+
+    async with httpx.AsyncClient(timeout=3.0) as client:
         while True:
             try:
-                response = await client.get(SENSOR_API_URL)
+                response = await client.get(settings.sensor_api_url)
                 response.raise_for_status()
                 data = response.json()
 
-                # APIレスポンスからmotionフラグ（bool）を取得してステータス（1 or 0）に変換
-                new_status = None
+                # APIレスポンスから現在の瞬間検知フラグ（1 or 0）を取得
+                raw_sample = None
                 if isinstance(data, dict):
                     if "motion" in data:
-                        # motion: True -> 1 (満車 / 検知あり), False -> 0 (空車 / 検知なし)
-                        new_status = 1 if data["motion"] else 0
+                        raw_sample = 1 if data["motion"] else 0
                     elif "status" in data:
-                        new_status = data["status"]
-                    elif TARGET_DEVICE_ID in data:
-                        new_status = data[TARGET_DEVICE_ID]
+                        raw_sample = int(data["status"])
+                    elif settings.target_device_id in data:
+                        raw_sample = int(data[settings.target_device_id])
                 elif isinstance(data, list):
                     for item in data:
                         if isinstance(item, dict):
                             if "motion" in item:
-                                new_status = 1 if item["motion"] else 0
+                                raw_sample = 1 if item["motion"] else 0
                                 break
-                            elif item.get("id") == TARGET_SENSOR_ID or item.get("device_id") == TARGET_DEVICE_ID:
-                                new_status = item.get("status")
+                            elif (
+                                item.get("id") == settings.target_sensor_id
+                                or item.get("device_id") == settings.target_device_id
+                            ):
+                                raw_sample = int(item.get("status", 0))
                                 break
 
-                if new_status is not None:
-                    db = SessionLocal()
-                    try:
-                        # テスト用指定: sensor_id = 1（device_id = SENSOR_UP_001）
-                        sensor = db.query(Sensor).filter(Sensor.id == TARGET_SENSOR_ID).first()
-                        if not sensor:
-                            sensor = db.query(Sensor).filter(Sensor.device_id == TARGET_DEVICE_ID).first()
+                if raw_sample is not None:
+                    # 履歴にサンプルを追加
+                    history.append(raw_sample)
 
-                        if not sensor:
-                            # センサーが存在しない場合は作成
-                            sensor = Sensor(
-                                id=TARGET_SENSOR_ID,
-                                device_id=TARGET_DEVICE_ID,
-                                status=int(new_status),
-                                last_sens_at=datetime.now(),
-                            )
-                            db.add(sensor)
-                            db.flush()
+                    # ウィンドウサイズ分サンプルが溜まったら判定とDB更新
+                    if len(history) == WINDOW_SIZE:
+                        occupied_count = sum(history)
+                        filtered_status = 1 if occupied_count >= OCCUPIED_THRESHOLD else 0
 
-                            spaces = db.query(Parking_spaces).filter(Parking_spaces.sensor_id == sensor.id).all()
-                            for space in spaces:
-                                space.status = int(new_status)
+                        db = SessionLocal()
+                        try:
+                            sensor = db.query(Sensor).filter(Sensor.id == settings.target_sensor_id).first()
+                            if not sensor:
+                                sensor = db.query(Sensor).filter(Sensor.device_id == settings.target_device_id).first()
 
-                            db.commit()
-                        elif sensor.status != int(new_status):
-                            # 前回の検知から状態が変わっていたら更新
-                            sensor.status = int(new_status)
-                            sensor.last_sens_at = datetime.now()
+                            if not sensor:
+                                # センサーが存在しない場合は初期作成
+                                sensor = Sensor(
+                                    id=settings.target_sensor_id,
+                                    device_id=settings.target_device_id,
+                                    status=filtered_status,
+                                    last_sens_at=datetime.now(),
+                                )
+                                db.add(sensor)
+                                db.flush()
 
-                            spaces = db.query(Parking_spaces).filter(Parking_spaces.sensor_id == sensor.id).all()
-                            for space in spaces:
-                                space.status = int(new_status)
+                                spaces = db.query(Parking_spaces).filter(Parking_spaces.sensor_id == sensor.id).all()
+                                for space in spaces:
+                                    space.status = filtered_status
 
-                            db.commit()
-                    finally:
-                        db.close()
+                                db.commit()
+                            elif sensor.status != filtered_status:
+                                # 状態に変更があった場合のみ更新
+                                sensor.status = filtered_status
+                                sensor.last_sens_at = datetime.now()
+
+                                spaces = db.query(Parking_spaces).filter(Parking_spaces.sensor_id == sensor.id).all()
+                                for space in spaces:
+                                    space.status = filtered_status
+
+                                db.commit()
+                        finally:
+                            db.close()
 
             except Exception as e:
                 print(f"[Sensor Monitor Error] {e}")

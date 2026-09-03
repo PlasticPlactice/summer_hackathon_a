@@ -1,4 +1,4 @@
-import AdminParkListTable from "../../component/parkList/adminParkListTable";
+import ParkListClient from "../../component/parkList/parkListClient";
 import { ParkingStatus } from "../../../types/parking";
 
 // バックエンドから駐車場一覧(現在状況込み)を取得する。取得に失敗した場合は空配列を返す
@@ -26,7 +26,7 @@ export default async function AdminParkListPage() {
 
   return (
     <main className="p-4 flex flex-col gap-4">
-      <AdminParkListTable parkings={parkings} />
+      <ParkListClient parkings={parkings} isAdmin />
     </main>
   );
 }

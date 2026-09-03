@@ -15,6 +15,7 @@ def test_create_parking_space(client: TestClient, test_db: Session):
     test_db.flush()
     
     space_data = {
+        "parking_number": 1,
         "type": "standard",
         "status": 0,
         "parking_id": parking.id,
@@ -24,7 +25,7 @@ def test_create_parking_space(client: TestClient, test_db: Session):
     
     assert response.status_code == 201
     data = response.json()
-    assert data["type"] == "standard"
+    assert data["type"] == "compact"
     assert data["status"] == 0
     assert data["parking_id"] == parking.id
     assert data["sensor_id"] == sensor.id
@@ -39,8 +40,8 @@ def test_get_all_spaces(client: TestClient, test_db: Session):
     test_db.add_all([parking, sensor1, sensor2])
     test_db.flush()
     
-    space1 = Parking_spaces(type="standard", status=0, parking_id=parking.id, sensor_id=sensor1.id)
-    space2 = Parking_spaces(type="compact", status=1, parking_id=parking.id, sensor_id=sensor2.id)
+    space1 = Parking_spaces(parking_number=1, type="standard", status=0, parking_id=parking.id, sensor_id=sensor1.id)
+    space2 = Parking_spaces(parking_number=2, type="compact", status=1, parking_id=parking.id, sensor_id=sensor2.id)
     test_db.add_all([space1, space2])
     test_db.commit()
     
@@ -49,7 +50,7 @@ def test_get_all_spaces(client: TestClient, test_db: Session):
     assert response.status_code == 200
     data = response.json()
     assert len(data) == 2
-    assert data[0]["type"] == "standard"
+    assert data[0]["type"] == "compact"
     assert data[1]["type"] == "compact"
 
 
@@ -60,7 +61,7 @@ def test_get_space_by_id(client: TestClient, test_db: Session):
     test_db.add_all([parking, sensor])
     test_db.flush()
     
-    space = Parking_spaces(type="standard", status=0, parking_id=parking.id, sensor_id=sensor.id)
+    space = Parking_spaces(parking_number=1, type="standard", status=0, parking_id=parking.id, sensor_id=sensor.id)
     test_db.add(space)
     test_db.commit()
     test_db.refresh(space)
@@ -70,7 +71,7 @@ def test_get_space_by_id(client: TestClient, test_db: Session):
     assert response.status_code == 200
     data = response.json()
     assert data["id"] == space.id
-    assert data["type"] == "standard"
+    assert data["type"] == "compact"
     assert data["status"] == 0
 
 
@@ -88,7 +89,7 @@ def test_update_space_status(client: TestClient, test_db: Session):
     test_db.add_all([parking, sensor])
     test_db.flush()
     
-    space = Parking_spaces(type="standard", status=0, parking_id=parking.id, sensor_id=sensor.id)
+    space = Parking_spaces(parking_number=1, type="standard", status=0, parking_id=parking.id, sensor_id=sensor.id)
     test_db.add(space)
     test_db.commit()
     test_db.refresh(space)
@@ -110,7 +111,7 @@ def test_delete_space(client: TestClient, test_db: Session):
     test_db.add_all([parking, sensor])
     test_db.flush()
     
-    space = Parking_spaces(type="standard", status=0, parking_id=parking.id, sensor_id=sensor.id)
+    space = Parking_spaces(parking_number=1, type="standard", status=0, parking_id=parking.id, sensor_id=sensor.id)
     test_db.add(space)
     test_db.commit()
     test_db.refresh(space)

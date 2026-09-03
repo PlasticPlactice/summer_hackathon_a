@@ -56,8 +56,19 @@ def save_parking_image(temp_image_path: str, parking_id: int) -> str:
     """
     ensure_directories()
     
-    if not os.path.exists(temp_image_path):
-        raise FileNotFoundError(f"Temporary image not found: {temp_image_path}")
+    # パスの先頭の '/' や './' を正規化
+    normalized_path = temp_image_path.lstrip("/")
+    if not normalized_path.startswith("temp_images/"):
+        normalized_path = os.path.join(TEMP_IMAGE_DIR, os.path.basename(temp_image_path))
+    
+    if not os.path.exists(normalized_path):
+        # 元のパスでも一応チェック
+        if os.path.exists(temp_image_path):
+            normalized_path = temp_image_path
+        else:
+            raise FileNotFoundError(f"Temporary image not found: {temp_image_path}")
+    
+    temp_image_path = normalized_path
     
     # 駐車場ID用のディレクトリを作成
     parking_dir = os.path.join(PARKING_IMAGE_DIR, str(parking_id))
