@@ -24,7 +24,10 @@ services:
       - "8000:8000"
     environment:
       DATABASE_URL: postgresql://postgres:postgres@db:5432/parking
-      SENSOR_API_URL: ${SENSOR_API_URL:-}
+      # 現在は実証用センサー1台を監視。値はホスト側の環境変数で差し替え可能
+      SENSOR_API_URL: ${SENSOR_API_URL:-http://192.168.120.238:3000/status}
+      TARGET_SENSOR_ID: ${TARGET_SENSOR_ID:-1}
+      TARGET_DEVICE_ID: ${TARGET_DEVICE_ID:-SENSOR_UP_001}
     volumes:
       - ./backend:/app
     depends_on:
