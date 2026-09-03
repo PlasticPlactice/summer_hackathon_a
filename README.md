@@ -38,11 +38,6 @@ docker-compose up
 - `AUTH_COOKIE_SECURE`: HTTPS環境では `true`
 - `AUTHORIZATION_ENABLED`: 管理APIの認可を有効にする場合は `true`（既定値は `false`）
 
-フロントエンドの認証対応が完了するまでは、`AUTHORIZATION_ENABLED=false` のまま管理APIを
-認証なしで利用できます。認証・認可を有効にする環境では `true` を指定してください。
-この設定は認可チェックだけを切り替えるため、`false` の場合でもログイン、ログアウト、
-認証状態確認APIは利用できます。
-
 ログイン後、フロントエンドから管理APIを呼ぶ際はCookieを送信するため、fetchに
 `credentials: "include"` を指定します。認証状態は `GET /api/v1/auth/me`、ログアウトは
 `POST /api/v1/auth/logout` で行えます。
