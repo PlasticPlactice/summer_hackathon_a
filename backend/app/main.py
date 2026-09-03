@@ -1,12 +1,14 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.api.routes import api_router, health
 from app.db.base import Base
 from app.db.session import engine
 import app.models  # noqa: F401 (すべてのモデルをBaseに登録させるために読み込む)
 import asyncio
+from services.image_service import PARKING_IMAGE_DIR, ensure_directories
 from services.sensor_monitor import start_sensor_monitor
 
 
@@ -33,4 +35,9 @@ app.add_middleware(
 
 app.include_router(health.router)
 app.include_router(api_router, prefix="/api/v1")
+
+# 登録済み駐車場の写真をフロントエンドから直接参照できるよう静的配信する
+# (マウント前にディレクトリが存在しないとStaticFilesの初期化に失敗するため作成しておく)
+ensure_directories()
+app.mount("/parking_images", StaticFiles(directory=PARKING_IMAGE_DIR), name="parking_images")
 

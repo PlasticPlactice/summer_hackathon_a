@@ -33,12 +33,11 @@ export default function ImageRegisterPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // 「駐車枠を検出する」ボタンを活性化する条件(すべての必須項目が入力・選択されているか)
-  const canDetect =
-    parking !== "" &&
-    largeCapacity !== "" &&
-    smallCapacity !== "" &&
-    file !== null &&
-    confirmed;
+  // 台数は検出結果から自動入力するため、検出実行時点では不要
+  const canDetect = parking !== "" && file !== null && confirmed;
+
+  // 「この内容で登録する」ボタンを活性化する条件(自動入力後、空にされていないか)
+  const canRegister = detection !== null && largeCapacity !== "" && smallCapacity !== "";
 
   const handleFiles = (files: FileList | null) => {
     if (files && files[0]) {
@@ -93,6 +92,12 @@ export default function ImageRegisterPage() {
       }
       const data = (await res.json()) as ParkingPreviewResponse;
       setDetection(data);
+      // 検出結果(type: compact/large)から台数を自動集計し、入力欄のデフォルト値にする
+      // (誤検出があれば登録前に管理者が修正できる)
+      const detectedLargeCount = data.spaces.filter((space) => space.type === "large").length;
+      const detectedSmallCount = data.spaces.filter((space) => space.type === "compact").length;
+      setLargeCapacity(String(detectedLargeCount));
+      setSmallCapacity(String(detectedSmallCount));
       setStage("preview");
     } catch (error) {
       console.error("駐車枠の検出中にエラーが発生しました", error);
@@ -105,12 +110,15 @@ export default function ImageRegisterPage() {
   const handleRetry = () => {
     setDetection(null);
     setErrorMessage(null);
+    // 台数も未検出状態に戻す(次の検出結果で改めて自動入力される)
+    setLargeCapacity("");
+    setSmallCapacity("");
     setStage("form");
   };
 
   // 検出結果を含めて駐車場情報を本登録する
   const handleRegister = async () => {
-    if (!detection) {
+    if (!canRegister || !detection) {
       return;
     }
     setErrorMessage(null);
@@ -169,41 +177,44 @@ export default function ImageRegisterPage() {
             className="w-full rounded-[5px] border border-[#a1a1a1] px-2 py-1 text-xs text-black placeholder:text-[#a1a1a1]"
           />
         </section>
-        {/* パーキングの駐車場規模 */}
+        {/* パーキングの駐車場規模(画像の駐車枠検出結果から自動入力する) */}
         <section className="flex flex-col gap-3 px-4">
-          <h2 className="text-base text-black">
-            パーキングの駐車場規模<span className="text-red-500">*</span>
-          </h2>
-          <section>
-            <label className="text-xs text-black font-bold">
-              大型車(バス、大型トラック)
-            </label>
-            <div className="flex items-center gap-2">
-              <input
-                type="number"
-                value={largeCapacity}
-                onChange={(e) => setLargeCapacity(e.target.value)}
-                placeholder="例：100"
-                className="w-full rounded-[5px] border border-[#a1a1a1] px-2 py-1 text-xs text-black placeholder:text-[#a1a1a1]"
-              />
-              <p className="text-xs text-black">台</p>
-            </div>
-          </section>
-          <section>
-            <label className="text-xs text-black font-bold">
-              小型車(一般車、軽自動車)
-            </label>
-            <div className="flex items-center gap-2">
-              <input
-                type="number"
-                value={smallCapacity}
-                onChange={(e) => setSmallCapacity(e.target.value)}
-                placeholder="例：100"
-                className="w-full rounded-[5px] border border-[#a1a1a1] px-2 py-1 text-xs text-black placeholder:text-[#a1a1a1]"
-              />
-              <p className="text-xs text-black">台</p>
-            </div>
-          </section>
+          <h2 className="text-base text-black">パーキングの駐車場規模</h2>
+          {stage === "preview" || stage === "registering" ? (
+            <>
+              <p className="text-xs text-black">検出結果から自動入力しています。誤りがあれば修正してください。</p>
+              <section>
+                <label className="text-xs text-black font-bold">
+                  大型車(バス、大型トラック)
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    value={largeCapacity}
+                    onChange={(e) => setLargeCapacity(e.target.value)}
+                    className="w-full rounded-[5px] border border-[#a1a1a1] px-2 py-1 text-xs text-black placeholder:text-[#a1a1a1]"
+                  />
+                  <p className="text-xs text-black">台</p>
+                </div>
+              </section>
+              <section>
+                <label className="text-xs text-black font-bold">
+                  小型車(一般車、軽自動車)
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    value={smallCapacity}
+                    onChange={(e) => setSmallCapacity(e.target.value)}
+                    className="w-full rounded-[5px] border border-[#a1a1a1] px-2 py-1 text-xs text-black placeholder:text-[#a1a1a1]"
+                  />
+                  <p className="text-xs text-black">台</p>
+                </div>
+              </section>
+            </>
+          ) : (
+            <p className="text-xs text-[#a1a1a1]">画像の駐車枠検出後に自動入力されます(登録前に修正できます)。</p>
+          )}
         </section>
         {/* 駐車場の写真をインポート */}
         <section className="flex flex-col gap-3 px-4">
@@ -237,7 +248,7 @@ export default function ImageRegisterPage() {
                 <button
                   type="button"
                   onClick={handleRegister}
-                  disabled={stage === "registering"}
+                  disabled={!canRegister || stage === "registering"}
                   className="h-[35px] w-[150px] cursor-pointer rounded-[5px] border border-[#3cff00] bg-[#d5fbcd] text-xs font-bold text-black transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   {stage === "registering" ? "登録中..." : "この内容で登録する"}
