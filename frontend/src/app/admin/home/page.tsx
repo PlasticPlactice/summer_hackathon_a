@@ -11,14 +11,11 @@ export default function AdminPage() {
         >
           パーキング一覧
         </Link>
-        <button className="h-[53px] cursor-pointer rounded-[5px] border border-[#cfbe00] bg-[#fbf7cd] text-base text-black transition-opacity hover:opacity-90">
-          パーキングの登録
-        </button>
         <Link
           href="/admin/imageRegister"
-          className="flex h-[53px] cursor-pointer items-center justify-center rounded-[5px] border border-[#e20000] bg-[#fbcdcd] text-base text-black transition-opacity hover:opacity-90"
+          className="flex h-[53px] cursor-pointer items-center justify-center rounded-[5px] border border-[#cfbe00] bg-[#fbf7cd] text-base text-black transition-opacity hover:opacity-90"
         >
-          画像の登録
+          パーキングの登録
         </Link>
         <Link
           href="/admin/sensors"
