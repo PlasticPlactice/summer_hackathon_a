@@ -11,7 +11,7 @@ import { FacilityKey } from "./facilityIcons";
 import { ParkingSpace, ParkingStatus } from "../../../types/parking";
 
 // 満空状況を定期的に自動更新する間隔(ミリ秒)
-const POLLING_INTERVAL_MS = 5000;
+const POLLING_INTERVAL_MS = 10000;
 
 type ParkInfoClientProps = {
   parkingId: number;
