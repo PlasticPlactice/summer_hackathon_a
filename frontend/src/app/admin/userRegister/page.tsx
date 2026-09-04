@@ -24,7 +24,7 @@ export default function AdminPage() {
     <main className="flex w-full flex-col items-center bg-white pb-10">
       <div className="flex w-full max-w-[390px] flex-col gap-5">
         {/* 戻るボタン */}
-        <Link href="/admin" className="flex items-center gap-2 px-4 py-3 text-black">
+        <Link href="/admin/home" className="flex items-center gap-2 px-4 py-3 text-black">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M19 12H5M12 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
           </svg>

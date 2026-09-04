@@ -46,6 +46,7 @@ export default function EditParkingClient({ parking }: EditParkingClientProps) {
     try {
       const res = await fetch(`${apiBaseUrl}/api/v1/parkings/${parking.id}`, {
         method: "PUT",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });

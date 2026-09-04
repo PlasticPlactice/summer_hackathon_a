@@ -9,7 +9,7 @@ INSERT INTO sensors (id, device_id, status, last_sens_at)
 SELECT 
   i,
   'SENSOR_UP_' || LPAD(i::text, 3, '0'),
-  (i % 2),
+  FLOOR(RANDOM() * 2)::SMALLINT,
   NOW()
 FROM generate_series(1, 101) AS i;
 
@@ -18,7 +18,7 @@ INSERT INTO sensors (id, device_id, status, last_sens_at)
 SELECT 
   i,
   'SENSOR_DOWN_' || LPAD((i - 101)::text, 3, '0'),
-  ((i + 1) % 2),
+  FLOOR(RANDOM() * 2)::SMALLINT,
   NOW()
 FROM generate_series(102, 206) AS i;
 
@@ -27,20 +27,22 @@ INSERT INTO parking_spaces (parking_number, type, status, parking_id, sensor_id)
 SELECT
   i,
   CASE WHEN i <= 79 THEN 'compact' ELSE 'large' END,
-  (i % 2),
+  sensors.status,
   1,
   i
-FROM generate_series(1, 101) AS i;
+FROM generate_series(1, 101) AS i
+JOIN sensors ON sensors.id = i;
 
 -- 駐車スペース初期データ (下り PA: 105区画（小型:79, 大型:26）)
 INSERT INTO parking_spaces (parking_number, type, status, parking_id, sensor_id)
 SELECT
   (i - 101),
   CASE WHEN (i - 101) <= 79 THEN 'compact' ELSE 'large' END,
-  ((i + 1) % 2),
+  sensors.status,
   2,
   i
-FROM generate_series(102, 206) AS i;
+FROM generate_series(102, 206) AS i
+JOIN sensors ON sensors.id = i;
 
 -- AUTO INCREMENT (シーケンス) の値を調整
 SELECT setval('parkings_id_seq', (SELECT MAX(id) FROM parkings));

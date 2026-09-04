@@ -1,14 +1,15 @@
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import EditParkingClient from "../../../../component/parkList/editParkingClient";
 import { ParkingStatus } from "../../../../../types/parking";
+import { authenticatedApiFetch } from "@/lib/authenticatedApiFetch";
 
 // バックエンドから指定IDの駐車場情報を取得する。存在しない場合はnullを返す
 // このfetchはNext.jsサーバー側(=Dockerではfrontendコンテナ内)で実行されるため、
 // ブラウザ向けのNEXT_PUBLIC_API_URLではなく、コンテナ間通信用のAPI_INTERNAL_URLを優先して使う
 async function fetchParking(id: string): Promise<ParkingStatus | null> {
-  const apiBaseUrl = process.env.API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_URL;
   try {
-    const res = await fetch(`${apiBaseUrl}/api/v1/parkings/${id}`, {
+    const res = await authenticatedApiFetch(`/api/v1/parkings/${id}`, {
       cache: "no-store",
     });
     if (!res.ok) {
@@ -25,6 +26,7 @@ async function fetchParking(id: string): Promise<ParkingStatus | null> {
 }
 
 export default async function EditParkingPage({ params }: { params: Promise<{ id: string }> }) {
+  await connection();
   const { id } = await params;
   const parking = await fetchParking(id);
 
