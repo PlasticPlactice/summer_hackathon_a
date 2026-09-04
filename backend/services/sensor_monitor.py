@@ -1,26 +1,30 @@
 from datetime import datetime
 import asyncio
 from collections import deque
+import logging
 import httpx
 from app.core.config import settings
 from app.db.session import SessionLocal
 from app.models.sensor import Sensor
 from app.models.spaces import Parking_spaces
 
-CHECK_INTERVAL_SECONDS = 1  # 1秒おきにデータ取得
-WINDOW_SIZE = 10  # 10秒（10サンプル）のウィンドウ
-OCCUPIED_THRESHOLD = 3  # 10回のうち3回以上検知されたら駐車状態と判定
+CHECK_INTERVAL_SECONDS = 0.5  # 0.5秒おきにデータ取得
+WINDOW_SIZE = 20  # 10秒（20サンプル）のウィンドウ
+OCCUPIED_THRESHOLD = 5  # 20回のうち5回以上検知されたら駐車状態と判定
+
+logger = logging.getLogger("uvicorn.error")
 
 
 async def start_sensor_monitor():
     """
-    実証用の対象センサー1台について、1秒ごとに状態をチェックし、10秒間（10回）の履歴から
+    実証用の対象センサー1台について、0.5秒ごとに状態をチェックし、10秒間（20回）の履歴から
     人や動物などの一時的な通過（1〜3秒）による誤検知を除外してステータス更新を行うバックグラウンドタスク
 
     接続先と対象センサーは SENSOR_API_URL、TARGET_SENSOR_ID、TARGET_DEVICE_ID
     の各環境変数で変更できる。
     """
     history = deque(maxlen=WINDOW_SIZE)
+    sample_count = 0
 
     async with httpx.AsyncClient(timeout=3.0) as client:
         while True:
@@ -54,11 +58,31 @@ async def start_sensor_monitor():
                 if raw_sample is not None:
                     # 履歴にサンプルを追加
                     history.append(raw_sample)
+                    sample_count += 1
+                    logger.info(
+                        "[Sensor Monitor] センサー情報取得: time=%s device_id=%s "
+                        "value=%s history=%s/%s",
+                        datetime.now().astimezone().isoformat(timespec="seconds"),
+                        settings.target_device_id,
+                        raw_sample,
+                        len(history),
+                        WINDOW_SIZE,
+                    )
 
                     # ウィンドウサイズ分サンプルが溜まったら判定とDB更新
                     if len(history) == WINDOW_SIZE:
                         occupied_count = sum(history)
                         filtered_status = 1 if occupied_count >= OCCUPIED_THRESHOLD else 0
+
+                        if sample_count % WINDOW_SIZE == 0:
+                            logger.info(
+                                "[Sensor Monitor] ===== 10秒区切り（20回取得） ===== "
+                                "time=%s samples=%s detected=%s filtered_status=%s",
+                                datetime.now().astimezone().isoformat(timespec="seconds"),
+                                list(history),
+                                occupied_count,
+                                filtered_status,
+                            )
 
                         db = SessionLocal()
                         try:
@@ -94,9 +118,16 @@ async def start_sensor_monitor():
                                 db.commit()
                         finally:
                             db.close()
+                else:
+                    logger.warning(
+                        "[Sensor Monitor] センサー情報は取得しましたが、検知値を解析できません: "
+                        "time=%s device_id=%s response=%s",
+                        datetime.now().astimezone().isoformat(timespec="seconds"),
+                        settings.target_device_id,
+                        data,
+                    )
 
-            except Exception as e:
-                print(f"[Sensor Monitor Error] {e}")
+            except Exception:
+                logger.exception("[Sensor Monitor] センサー情報の取得または更新に失敗しました")
 
             await asyncio.sleep(CHECK_INTERVAL_SECONDS)
-
