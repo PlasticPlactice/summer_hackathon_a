@@ -1,2 +1,41 @@
 @import "tailwindcss";
 
+/* 背景のアニメーション */
+@keyframes road-scroll {
+  from {
+    background-position-x: 0;
+  }
+  to {
+    background-position-x: 2100px; /* 背景画像の横幅に合わせて調整 */
+  }
+}
+
+/* 車を軽く上下に揺らして走行感を足す（お好みで） */
+@keyframes car-bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+.animate-car-bounce {
+  animation: car-bounce 0.6s ease-in-out infinite;
+}
+
+/* タップ後、車が画面外に走り去る */
+@keyframes car-drive-off {
+  0% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-120vw); /* 120vw → -120vw に変更 */
+    opacity: 0;
+  }
+}
+
+.animate-car-drive-off {
+  animation: car-drive-off 3s cubic-bezier(0.4, 0, 1, 1) forwards;
+}
