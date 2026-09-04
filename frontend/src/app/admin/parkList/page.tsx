@@ -1,14 +1,15 @@
 import Link from "next/link";
+import { connection } from "next/server";
 import ParkListClient from "../../component/parkList/parkListClient";
 import { ParkingStatus } from "../../../types/parking";
+import { authenticatedApiFetch } from "@/lib/authenticatedApiFetch";
 
 // バックエンドから駐車場一覧(現在状況込み)を取得する。取得に失敗した場合は空配列を返す
 // このfetchはNext.jsサーバー側(=Dockerではfrontendコンテナ内)で実行されるため、
 // ブラウザ向けのNEXT_PUBLIC_API_URLではなく、コンテナ間通信用のAPI_INTERNAL_URLを優先して使う
 async function fetchParkings(): Promise<ParkingStatus[]> {
-  const apiBaseUrl = process.env.API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_URL;
   try {
-    const res = await fetch(`${apiBaseUrl}/api/v1/parkings`, {
+    const res = await authenticatedApiFetch("/api/v1/parkings", {
       cache: "no-store",
     });
     if (!res.ok) {
@@ -23,6 +24,7 @@ async function fetchParkings(): Promise<ParkingStatus[]> {
 }
 
 export default async function AdminParkListPage() {
+  await connection();
   const parkings = await fetchParkings();
 
   return (

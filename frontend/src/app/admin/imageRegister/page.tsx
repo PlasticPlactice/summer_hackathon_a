@@ -82,6 +82,7 @@ export default function ImageRegisterPage() {
     try {
       const res = await fetch(`${apiBaseUrl}/api/v1/parkings/preview`, {
         method: "POST",
+        credentials: "include",
         body: formData,
       });
       if (!res.ok) {
@@ -137,6 +138,7 @@ export default function ImageRegisterPage() {
     try {
       const res = await fetch(`${apiBaseUrl}/api/v1/parkings`, {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });

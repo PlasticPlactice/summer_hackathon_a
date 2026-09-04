@@ -1,15 +1,16 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import SpaceSensorAssignClient from "../../../../component/sensors/spaceSensorAssignClient";
 import { ParkingSpace, ParkingStatus, Sensor } from "../../../../../types/parking";
+import { authenticatedApiFetch } from "@/lib/authenticatedApiFetch";
 
 // バックエンドから指定IDの駐車場情報(スペース込み)を取得する。存在しない場合はnullを返す
 // このfetchはNext.jsサーバー側(=Dockerではfrontendコンテナ内)で実行されるため、
 // ブラウザ向けのNEXT_PUBLIC_API_URLではなく、コンテナ間通信用のAPI_INTERNAL_URLを優先して使う
 async function fetchParking(id: string): Promise<ParkingStatus | null> {
-  const apiBaseUrl = process.env.API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_URL;
   try {
-    const res = await fetch(`${apiBaseUrl}/api/v1/parkings/${id}`, {
+    const res = await authenticatedApiFetch(`/api/v1/parkings/${id}`, {
       cache: "no-store",
     });
     if (!res.ok) {
@@ -26,9 +27,8 @@ async function fetchParking(id: string): Promise<ParkingStatus | null> {
 }
 
 async function fetchSensors(): Promise<Sensor[]> {
-  const apiBaseUrl = process.env.API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_URL;
   try {
-    const res = await fetch(`${apiBaseUrl}/api/v1/sensors`, { cache: "no-store" });
+    const res = await authenticatedApiFetch("/api/v1/sensors", { cache: "no-store" });
     if (!res.ok) {
       console.error(`センサー一覧の取得に失敗しました: ${res.status}`);
       return [];
@@ -42,9 +42,8 @@ async function fetchSensors(): Promise<Sensor[]> {
 
 // システム全体でどのセンサーが既にスペースに紐付き済みかを知るため、全スペースを取得する
 async function fetchAllSpaces(): Promise<ParkingSpace[]> {
-  const apiBaseUrl = process.env.API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_URL;
   try {
-    const res = await fetch(`${apiBaseUrl}/api/v1/spaces`, { cache: "no-store" });
+    const res = await authenticatedApiFetch("/api/v1/spaces", { cache: "no-store" });
     if (!res.ok) {
       console.error(`駐車スペース一覧の取得に失敗しました: ${res.status}`);
       return [];
@@ -57,6 +56,7 @@ async function fetchAllSpaces(): Promise<ParkingSpace[]> {
 }
 
 export default async function ParkingSensorsPage({ params }: { params: Promise<{ id: string }> }) {
+  await connection();
   const { id } = await params;
   const [parking, sensors, allSpaces] = await Promise.all([
     fetchParking(id),

@@ -1,14 +1,15 @@
 import Link from "next/link";
+import { connection } from "next/server";
 import SensorListClient from "../../component/sensors/sensorListClient";
 import { ParkingStatus, Sensor } from "../../../types/parking";
+import { authenticatedApiFetch } from "@/lib/authenticatedApiFetch";
 
 // バックエンドからセンサー一覧を取得する。取得に失敗した場合は空配列を返す
 // このfetchはNext.jsサーバー側(=Dockerではfrontendコンテナ内)で実行されるため、
 // ブラウザ向けのNEXT_PUBLIC_API_URLではなく、コンテナ間通信用のAPI_INTERNAL_URLを優先して使う
 async function fetchSensors(): Promise<Sensor[]> {
-  const apiBaseUrl = process.env.API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_URL;
   try {
-    const res = await fetch(`${apiBaseUrl}/api/v1/sensors`, {
+    const res = await authenticatedApiFetch("/api/v1/sensors", {
       cache: "no-store",
     });
     if (!res.ok) {
@@ -24,9 +25,8 @@ async function fetchSensors(): Promise<Sensor[]> {
 
 // センサーがどのパーキング・スペースに紐付いているかを求めるため、駐車場一覧(スペース込み)も取得する
 async function fetchParkings(): Promise<ParkingStatus[]> {
-  const apiBaseUrl = process.env.API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_URL;
   try {
-    const res = await fetch(`${apiBaseUrl}/api/v1/parkings`, {
+    const res = await authenticatedApiFetch("/api/v1/parkings", {
       cache: "no-store",
     });
     if (!res.ok) {
@@ -41,6 +41,7 @@ async function fetchParkings(): Promise<ParkingStatus[]> {
 }
 
 export default async function AdminSensorsPage() {
+  await connection();
   const [sensors, parkings] = await Promise.all([fetchSensors(), fetchParkings()]);
 
   return (
