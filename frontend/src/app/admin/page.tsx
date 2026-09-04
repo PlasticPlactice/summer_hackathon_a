@@ -90,7 +90,7 @@ export default function AdminPage() {
             ログイン
           </button>
         </form>
-        <div className="flex gap-4">
+        {/* <div className="flex gap-4">
           <h3 className="text-xs font-bold">アカウントをお持ちでない場合</h3>
           <Link
             href="/admin/userRegister"
@@ -98,7 +98,7 @@ export default function AdminPage() {
           >
             登録はこちら
           </Link>
-        </div>
+        </div> */}
       </div>
     </main>
   );
