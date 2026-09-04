@@ -52,9 +52,18 @@ export default function SpaceSensorAssignClient({
   const refreshAll = async () => {
     try {
       const [parkingRes, sensorsRes, spacesRes] = await Promise.all([
-        fetch(`${apiBaseUrl}/api/v1/parkings/${parkingId}`, { cache: "no-store" }),
-        fetch(`${apiBaseUrl}/api/v1/sensors`, { cache: "no-store" }),
-        fetch(`${apiBaseUrl}/api/v1/spaces`, { cache: "no-store" }),
+        fetch(`${apiBaseUrl}/api/v1/parkings/${parkingId}`, {
+          cache: "no-store",
+          credentials: "include",
+        }),
+        fetch(`${apiBaseUrl}/api/v1/sensors`, {
+          cache: "no-store",
+          credentials: "include",
+        }),
+        fetch(`${apiBaseUrl}/api/v1/spaces`, {
+          cache: "no-store",
+          credentials: "include",
+        }),
       ]);
 
       if (parkingRes.ok) {
@@ -94,6 +103,7 @@ export default function SpaceSensorAssignClient({
   const linkSensorToSpace = async (spaceId: number, sensorId: number) => {
     const res = await fetch(`${apiBaseUrl}/api/v1/spaces/${spaceId}/sensor`, {
       method: "PUT",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ sensor_id: sensorId }),
     });
@@ -131,6 +141,7 @@ export default function SpaceSensorAssignClient({
     try {
       const createRes = await fetch(`${apiBaseUrl}/api/v1/sensors`, {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ device_id: newDeviceId.trim(), status: 0 }),
       });
@@ -166,6 +177,7 @@ export default function SpaceSensorAssignClient({
     try {
       const res = await fetch(`${apiBaseUrl}/api/v1/spaces/${spaceId}/sensor`, {
         method: "PUT",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sensor_id: null }),
       });

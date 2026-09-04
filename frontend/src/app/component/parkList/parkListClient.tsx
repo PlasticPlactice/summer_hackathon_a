@@ -63,6 +63,7 @@ export default function ParkListClient({ parkings, isAdmin = false }: ParkListCl
     try {
       const res = await fetch(`${apiBaseUrl}/api/v1/parkings/${deleteTarget.id}`, {
         method: "DELETE",
+        credentials: "include",
       });
       if (!res.ok) {
         console.error(`駐車場の削除に失敗しました: ${res.status}`);

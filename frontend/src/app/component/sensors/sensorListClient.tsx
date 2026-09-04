@@ -61,7 +61,10 @@ export default function SensorListClient({ initialSensors, parkings }: SensorLis
   // 最新のセンサー一覧を取得し直す(パーキング側の紐付け状況はページ遷移時にサーバー側で再取得される)
   const refreshSensors = async () => {
     try {
-      const res = await fetch(`${apiBaseUrl}/api/v1/sensors`, { cache: "no-store" });
+      const res = await fetch(`${apiBaseUrl}/api/v1/sensors`, {
+        cache: "no-store",
+        credentials: "include",
+      });
       if (!res.ok) return;
       setSensors((await res.json()) as Sensor[]);
     } catch (error) {
@@ -77,6 +80,7 @@ export default function SensorListClient({ initialSensors, parkings }: SensorLis
     try {
       const res = await fetch(`${apiBaseUrl}/api/v1/sensors`, {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ device_id: newDeviceId.trim(), status: 0 }),
       });
@@ -112,6 +116,7 @@ export default function SensorListClient({ initialSensors, parkings }: SensorLis
     try {
       const res = await fetch(`${apiBaseUrl}/api/v1/sensors/${sensorId}`, {
         method: "PUT",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ device_id: editingDeviceId.trim(), status: editingStatus }),
       });
@@ -138,6 +143,7 @@ export default function SensorListClient({ initialSensors, parkings }: SensorLis
     try {
       const res = await fetch(`${apiBaseUrl}/api/v1/sensors/${deleteTarget.id}`, {
         method: "DELETE",
+        credentials: "include",
       });
       if (!res.ok) {
         console.error(`センサーの削除に失敗しました: ${res.status}`);
