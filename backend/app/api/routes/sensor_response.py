@@ -7,9 +7,6 @@ router = APIRouter(prefix="/sensor-response", tags=["sensor-response"])
 # 設定された実証用センサーAPIから情報を取得する
 @router.get("")
 def get_sensor_data():
-
-    SENSOR_API_URL = "http://192.168.120.238:3000/status"
-    
     try:
         response = httpx.get(settings.sensor_api_url, timeout=5)
         response.raise_for_status()
